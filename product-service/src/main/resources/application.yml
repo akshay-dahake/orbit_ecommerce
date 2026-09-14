@@ -1,0 +1,23 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: product-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orbit_product
+    username: orbit
+    password: orbit
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# ADMIN-only write endpoints (create/update/delete/activate/deactivate) require
+# a valid JWT with role=ADMIN. Browsing (GET) stays public.
+
+jwt:
+  secret: "PZcA141UWcKZ6SM22k0E+jhFQ0Co65JydmnSc/t7FTsdDEaWiVZnjIAcPQCs0aFr"

@@ -1,0 +1,40 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orbit_order
+    username: orbit
+    password: orbit
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# "own orders" comes from the authenticated JWT's subject (see CurrentUser),
+# not a client-supplied value - see OrderController/OrderService.
+
+# Base URLs for the OpenFeign clients that call other services directly.
+# Once service discovery (Eureka) exists, these become discovery lookups
+# instead of hardcoded localhost URLs.
+product-service:
+  base-url: http://localhost:8082
+
+inventory-service:
+  base-url: http://localhost:8084
+
+payment-service:
+  base-url: http://localhost:8085
+
+jwt:
+  secret: "PZcA141UWcKZ6SM22k0E+jhFQ0Co65JydmnSc/t7FTsdDEaWiVZnjIAcPQCs0aFr"
+
+# Sent as X-Internal-Api-Key when calling inventory-service's ADMIN-only
+# increase/decrease endpoints - must match inventory-service's internal.api-key.
+internal:
+  api-key: "7f0fad85a788eadbf1bf798bd4e053e6cd12287e0c5889f3ec567b03b678401"

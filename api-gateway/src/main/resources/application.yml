@@ -1,0 +1,74 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # React dev server (Vite default port) calls the gateway directly from
+      # the browser, so CORS must be handled here - the browser never talks
+      # to the individual services.
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "http://localhost:*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: false
+      routes:
+        - id: auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**
+
+        - id: product-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/products/**
+
+        # More specific than order-service's route below, so it must come first -
+        # Spring Cloud Gateway matches routes in the order they're declared.
+        - id: payment-service-order-lookup
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/orders/*/payment
+
+        - id: payment-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/payments/**
+
+        - id: order-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/orders/**,/api/admin/orders/**
+
+        - id: inventory-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/inventory/**
+
+        - id: notification-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/notifications/**
+
+# Must match every service's jwt.secret - used only to VALIDATE tokens here
+# (auth-service is still the only issuer).
+jwt:
+  secret: "PZcA141UWcKZ6SM22k0E+jhFQ0Co65JydmnSc/t7FTsdDEaWiVZnjIAcPQCs0aFr"
+
+# Coarse-grained rules enforced at the edge. Fine-grained/business-level
+# authorization (ownership checks, "only completed payments can be refunded",
+# etc.) still lives inside each service - the gateway can't know that logic.
+orbit:
+  security:
+    # method:pathPattern, or just a pathPattern to match any method
+    public-paths:
+      - "POST:/api/auth/register"
+      - "POST:/api/auth/login"
+      - "GET:/api/products/**"
+    admin-paths:
+      - "/api/admin/**"
+      - "/api/inventory/**"

@@ -1,0 +1,26 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orbit_auth
+    username: orbit
+    password: orbit
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# --- JWT config ---
+# IMPORTANT: this exact secret must be copied into every other service's
+# application.yml (and the api-gateway's) so they can all validate tokens
+# signed here. In a real deployment this belongs in a secrets manager /
+# environment variable, shared via config server - not hardcoded per service.
+jwt:
+  secret: "PZcA141UWcKZ6SM22k0E+jhFQ0Co65JydmnSc/t7FTsdDEaWiVZnjIAcPQCs0aFr"
+  expiration-ms: 3600000   # 1 hour

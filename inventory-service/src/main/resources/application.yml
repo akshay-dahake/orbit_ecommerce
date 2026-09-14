@@ -1,0 +1,28 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orbit_inventory
+    username: orbit
+    password: orbit
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Every endpoint here requires role=ADMIN, OR a request bearing the internal
+# API key below (used by order-service for stock increase/decrease).
+
+jwt:
+  secret: "PZcA141UWcKZ6SM22k0E+jhFQ0Co65JydmnSc/t7FTsdDEaWiVZnjIAcPQCs0aFr"
+
+# Must match order-service's internal.api-key - that's who calls the
+# increase/decrease endpoints internally.
+internal:
+  api-key: "7f0fad85a788eadbf1bf798bd4e053e6cd12287e0c5889f3ec567b03b678401"

@@ -1,0 +1,28 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orbit_notification
+    username: orbit
+    password: orbit
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# POST /api/notifications requires either role=ADMIN or the internal API key
+# (that's how order-service/payment-service would call it service-to-service).
+# GET endpoints just require a valid JWT. Sending is mocked (logged) for now -
+# swap in real email/SMS/event-driven dispatch later.
+
+jwt:
+  secret: "PZcA141UWcKZ6SM22k0E+jhFQ0Co65JydmnSc/t7FTsdDEaWiVZnjIAcPQCs0aFr"
+
+internal:
+  api-key: "7f0fad85a788eadbf1bf798bd4e053e6cd12287e0c5889f3ec567b03b678401"
