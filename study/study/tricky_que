@@ -1,0 +1,100 @@
+*
+int x=0;
+try{
+    x= 1;
+    return ;	
+}finally{
+	x = 2;
+}
+
+
+o/p is x= 1;
+
+
+*
+int x=0;
+try{
+    x= 1;
+    return ;	
+}finally{
+	x = 2;
+	return ;
+}
+
+o/p x = 2;
+
+
+*
+before java 22 in switch case 
+in case null is not allowed 
+but from 22 it is allowed
+
+
+*
+interface A{
+	void method()
+}
+
+
+interface B{
+	void method()
+}
+
+public class C implements A,B{}  // HERE WE NEED TO OVERRIDE THE METHOD OTHERWISE WE WILL GET THE ERROR
+
+
+*
+interface A{
+	void method()
+}
+
+
+interface B{
+	int method()
+}
+
+public class C implements A,B{}  // here we can not override also as the method type is diff we will get error only to solve this make type same
+
+you can implement only one implement at a time here in this case
+
+
+*
+*
+interface A{
+	 default void method()
+}
+
+
+interface B{
+	default void method()
+}
+
+public class C implements A,B{
+
+	A.super.method();
+	B.super.method();
+}  // HERE WE NEED TO OVERRIDE THE METHOD OTHERWISE WE WILL GET THE ERROR or you can do like this 
+
+*
+wait() cannot be called without syncronization
+wait() is to release a lock if dont syncronized it how he released the lock , 2st it should have to aquire lock for that syncronized is must
+
+
+*
+to make class immutable we need to do lot of things like make class final , variable private , initialize every variavle in constructor
+and providing only getter 
+
+but from java 14 there is concept called record is introduced.
+i have ss of this use that 
+/home/intern-4/Pictures/Screenshots/Screenshot from 2026-01-31 14-08-04.png
+
+
+*
+why we need immutable objects 
+ans is in below ss
+/home/intern-4/Pictures/Screenshots/Screenshot from 2026-01-31 14-11-27.png 
+
+
+*
+memory leak
+/home/intern-4/Pictures/Screenshots/Screenshot from 2026-01-31 14-37-04.png

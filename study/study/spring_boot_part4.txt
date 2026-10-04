@@ -1,0 +1,1046 @@
+*
+have you worked on rest service if yes what all HTTP methods used
+get,put,post,delete, patch
+
+
+* 
+how can you specify HTTP method type
+
+
+*
+can you design rest endpoint, assume have product db and task is to create api to filter list of product by product type 
+
+Database Model (Product Table)
+PRODUCT
+--------
+id
+name
+type
+price
+created_at
+
+3️⃣ Entity (JPA)
+@Entity
+@Table(name = "product")
+public class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    private String type; // e.g. ELECTRONICS, BOOK, FOOD
+
+    private BigDecimal price;
+
+    // getters & setters
+}
+
+4️⃣ Repository Layer
+@Repository
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    List<Product> findByType(String type);
+}
+
+✔ Spring Data JPA generates the query automatically.
+
+5️⃣ Service Layer
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    public List<Product> getProductsByType(String type) {
+        return productRepository.findByType(type);
+    }
+}
+
+6️⃣ Controller Layer (REST Endpoint)
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Product>> getProductsByType(
+            @RequestParam("type") String type) {
+
+        List<Product> products = productService.getProductsByType(type);
+        return ResponseEntity.ok(products);
+    }
+}
+
+7️⃣ Sample JSON Response
+[
+  {
+    "id": 1,
+    "name": "Laptop",
+    "type": "ELECTRONICS",
+    "price": 80000
+  },
+  {
+    "id": 2,
+    "name": "Mobile Phone",
+    "type": "ELECTRONICS",
+    "price": 30000
+  }
+]
+
+
+*
+diff between pathvariable and RequestParam
+
+| Feature      | `@PathVariable`   | `@RequestParam`      |
+| ------------ | ----------------- | -------------------- |
+| Location     | URL path          | Query string         |
+| Purpose      | Identify resource | Filter/modify data   |
+| Mandatory    | Usually yes       | Optional             |
+| REST Meaning | Resource identity | Query options        |
+| Example URL  | `/users/5`        | `/users?active=true` |
+
+
+@PathVariable is used to extract values from the URI path to identify a resource
+Commonly used in RESTful APIs
+ex-
+GET /users/101
+
+@GetMapping("/users/{id}")
+public User getUser(@PathVariable Long id) { }
+
+@RequestParam is used to extract query parameters for filtering or modifying the response.
+Used for search, sorting, pagination
+ex-
+GET /users?active=true&page=1
+@GetMapping("/users")
+public List<User> getUsers(
+    @RequestParam boolean active,
+    @RequestParam(required = false) Integer page) { }
+
+
+
+When to use which (experienced insight)
+
+Use @PathVariable when:
+Identifying a specific resource
+URL represents a noun
+Example: /orders/{orderId}
+
+Use @RequestParam when:
+Applying filters, sorting, pagination
+Parameters are optional or combinational
+Example: /orders?status=OPEN&sort=date
+
+*
+why use @RestCOntroller not @controller
+
+@RestController is used for REST APIs because it automatically returns data (JSON/XML),  the data returned by each method will be written directly 
+into the response body as JSON or XML
+XML,
+while @Controller is mainly for returning views (HTML/JSP).
+
+
+*
+can we update with post http method if yes then why put is needed
+put is idempotent 
+post is non idempotent
+
+What is idempotent?
+If you send the same request multiple times, the result remains the same.
+
+PUT → Idempotent ✅
+PUT /users/10
+Body: { "name": "Akshay" }
+
+Send it 1 time or 10 times →
+User name is Akshay
+✔ Safe for retries
+
+POST → Not idempotent ❌
+POST /users
+Body: { "name": "Akshay" }
+
+Send it twice →
+❌ Two users may be created
+First Request
+👉 Creates a user:
+User ID: 101
+🧾 Second Same Request
+👉 Creates another user:
+User ID: 102
+
+*
+PUT vs PATCH (HTTP Methods)
+
+🔹 PUT
+Definition:
+PUT is used to replace the entire resource with the data provided.
+
+🔹 PATCH
+Definition:
+PATCH is used to partially update a resource.
+
+Key Difference (one line – remember this)
+PUT = full replacement
+PATCH = partial modification
+
+Example (very important)
+Existing resource
+{
+  "id": 10,
+  "name": "Akshay",
+  "email": "akshay@gmail.com",
+  "age": 25
+}
+
+PUT example
+PUT /users/10
+{
+  "name": "Akshay D",
+  "email": "akshayd@gmail.com"
+}
+
+🔴 Result after PUT:
+
+{
+  "id": 10,
+  "name": "Akshay D",
+  "email": "akshayd@gmail.com",
+  "age": null
+}
+➡ Missing fields may be removed or reset
+
+PATCH example
+PATCH /users/10
+{
+  "email": "akshayd@gmail.com"
+}
+
+🟢 Result after PATCH:
+
+{
+  "id": 10,
+  "name": "Akshay",
+  "email": "akshayd@gmail.com",
+  "age": 25
+}
+➡ Only the given field is changed
+
+
+*
+can  we pass request body in GET http method
+
+No — Spring Boot does not support a request body in GET
+In Spring Boot (Spring MVC & WebFlux):
+@GetMapping does not support @RequestBody
+The request body is ignored or causes an error
+Behavior is not reliable and not recommended
+
+
+*
+how can we perform content negotiation at rest endpoint
+-->
+Content negotiation lets a REST API return different representations (JSON, XML, etc.) from the same endpoint, based on the client request.
+
+Spring Boot supports content negotiation mainly via:
+Accept header (recommended)
+URL path extensions (not recommended)
+Query parameters (optional, legacy)
+
+
+Recommended Way: Accept Header (Best Practice)
+1️⃣ REST Controller
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @GetMapping(
+        value = "/{id}",
+        produces = {
+            MediaType.APPLICATION_JSON_VALUE,
+            MediaType.APPLICATION_XML_VALUE
+        }
+    )
+    public User getUser(@PathVariable Long id) {
+        return service.getUser(id);
+    }
+}
+
+2.Client Requests
+api  here it will be api like 
+GET /api/users/1
+Accept: application/json
+
+3.Required Dependencies
+
+JSON (default)
+spring-boot-starter-web
+
+XML (optional)
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+</dependency>
+
+Use Accept header–based content negotiation with produces in Spring Boot.
+
+*
+diff type of status code
+
+1️⃣ 1xx – Informational
+
+Request received, processing continues.
+
+Code	Meaning			Usage
+100	Continue	        Client should continue request
+101	Switching Protocols	WebSocket upgrade
+
+👉 Rarely used in REST APIs.
+
+2️⃣ 2xx – Success
+
+Request was successfully received and processed.
+
+Code		Meaning			When to use in Spring Boot
+200 OK	        Success			GET, PUT
+201 Created	Resource created	POST
+202 Accepted	Request accepted	Async processing
+204 No Content	Success, no body	DELETE
+
+return ResponseEntity.ok(data);            // 200
+return ResponseEntity.status(201).body(x); // 201
+
+3️⃣ 3xx – Redirection
+
+Client must take additional action.
+
+Code	Meaning			Usage
+301	Moved Permanently	URL changed
+302	Found			Temporary redirect
+304	Not Modified		Caching
+
+👉 Rare in REST APIs (mostly web apps).
+
+4️⃣ 4xx – Client Error
+
+Problem with client request.
+
+Code		Meaning	 				Spring Boot Usage
+400 Bad Request	Invalid input			Validation failure
+401 Unauthorized ,Not authenticated		Missing/invalid token
+403 Forbidden	Not allowed			No permission , not authorized to particularr api
+404 Not Found	Resource not found		Wrong URL / ID
+405 Method Not Allowed	,Wrong HTTP method	POST on GET endpoint
+409 Conflict	Resource conflict		Duplicate data
+415 Unsupported Media Type,Wrong Content-Type	JSON expected and we are sending xml or other
+422 Unprocessable Entity,Validation error	Semantic issue
+
+return ResponseEntity.badRequest().build(); // 400
+
+5️⃣ 5xx – Server Error
+
+Problem on the server side.
+
+Code	Meaning				When it happens
+500 Internal Server Error		Generic server error,Unhandled exception
+502 Bad Gateway	Invalid upstream	API gateway issue
+503 Service Unavailable			Down/overloaded	Maintenance
+504 Gateway Timeout			Timeout	Slow upstream
+
+
+Summary
+Class	Meaning
+1xx	Informational
+2xx	Success
+3xx	Redirection
+4xx	Client Error
+5xx	Server Error
+
+Authentication & Authorization
+| Scenario                         | Status Code          | Why                           |
+| -------------------------------- | -------------------- | ----------------------------- |
+| User not logged in               | **401 Unauthorized** | Missing/invalid credentials   |
+| Token expired                    | **401 Unauthorized** | Re-authentication needed      |
+| User logged in but no permission | **403 Forbidden**    | Authenticated but not allowed |
+
+
+Resource Retrieval (GET)
+| Scenario                     | Status Code          | Notes              |
+| ---------------------------- | -------------------- | ------------------ |
+| Resource found               | **200 OK**           | Return resource    |
+| Resource not found           | **404 Not Found**    | ID doesn’t exist   |
+| Empty list                   | **200 OK**           | Return empty array |
+| Resource deleted             | **404 Not Found**    | No longer exists   |
+| Conditional GET not modified | **304 Not Modified** | Caching            |
+
+Resource Creation (POST)
+| Scenario                            | Status Code                  | Notes                     |
+| ----------------------------------- | ---------------------------- | ------------------------- |
+| Created successfully                | **201 Created**              | Include `Location` header |
+| Duplicate resource                  | **409 Conflict**             | Unique constraint         |
+| Invalid request body                | **400 Bad Request**          | Syntax error              |
+| Valid JSON, but business rule fails | **422 Unprocessable Entity** | Semantic validation       |
+| Async creation                      | **202 Accepted**             | Processing later          |
+
+
+Resource Update (PUT / PATCH)
+| Scenario                           | Status Code         | Notes                   |
+| ---------------------------------- | ------------------- | ----------------------- |
+| Updated successfully               | **200 OK**          | Return updated resource |
+| Updated, no body                   | **204 No Content**  | No response body        |
+| Resource not found                 | **404 Not Found**   | ID missing              |
+| Version conflict (optimistic lock) | **409 Conflict**    | Concurrent update       |
+| Invalid fields                     | **400 Bad Request** | Malformed input         |
+
+
+Resource Deletion (DELETE)
+| Scenario             | Status Code        | Notes           |
+| -------------------- | ------------------ | --------------- |
+| Deleted successfully | **204 No Content** | Recommended     |
+| Resource not found   | **404 Not Found**  | Already deleted |
+| Deletion not allowed | **403 Forbidden**  | Business rule   |
+
+
+Validation & Input Errors
+| Scenario                 | Status Code                    | Why                  |
+| ------------------------ | ------------------------------ | -------------------- |
+| Missing required field   | **400 Bad Request**            | Client mistake       |
+| Constraint violation     | **422 Unprocessable Entity**   | Business validation  |
+| Invalid query param      | **400 Bad Request**            | Wrong type/value     |
+| Unsupported content type | **415 Unsupported Media Type** | Wrong `Content-Type` |
+
+
+Content Negotiation
+| Scenario                    | Status Code                    |
+| --------------------------- | ------------------------------ |
+| Unsupported `Content-Type`  | **415 Unsupported Media Type** |
+| Unsupported `Accept` header | **406 Not Acceptable**         |
+
+Rate Limiting & Throttling
+| Scenario          | Status Code               | Notes                 |
+| ----------------- | ------------------------- | --------------------- |
+| Too many requests | **429 Too Many Requests** | Include retry headers |
+
+
+Business Rule Failures
+| Scenario                               | Status Code                  | Example            |
+| -------------------------------------- | ---------------------------- | ------------------ |
+| Insufficient balance                   | **409 Conflict**             | Payment APIs       |
+| Order already processed                | **409 Conflict**             | State conflict     |
+| Operation not allowed in current state | **422 Unprocessable Entity** | Invalid transition |
+
+
+
+*
+how to customize the status code 
+-->
+like this 
+1.
+Using @ResponseStatus on Controller Method
+@PostMapping("/users")
+@ResponseStatus(HttpStatus.CREATED)  ----- we can use like this
+public UserDto createUser(@RequestBody UserDto user) {
+    return service.save(user);
+}
+
+✔ Simple for success codes like 201 Created
+❌ No dynamic control
+
+2.
+Custom Error Response Body
+Error DTO
+public class ErrorResponse {
+    private String code;
+    private String message;
+}
+
+Usage
+return ResponseEntity
+        .status(HttpStatus.CONFLICT)
+        .body(new ErrorResponse("DUPLICATE_USER", "User already exists"));
+        
+*
+how can you enable cross origin
+-->
+Cross origin is a security feature implemented by web browser to control web page request made from one domain to another
+using cross orgin we can restrict what all host or domain can access the application
+
+If Spring Security is present, always configure CORS in the security layer.
+
+1.Enable CORS at Controller / Method Level (@CrossOrigin)
+Example
+@RestController
+@RequestMapping("/api/users")
+@CrossOrigin(
+    origins = "http://localhost:3000",
+    allowedHeaders = "*",
+    methods = { RequestMethod.GET, RequestMethod.POST }
+)
+public class UserController {
+
+    @GetMapping
+    public List<UserDto> getUsers() {
+        return service.findAll();
+    }
+}
+
+✔ Simple
+✔ Good for small apps
+❌ Not ideal for large systems
+
+2️⃣ Global CORS Configuration (Recommended)
+Using WebMvcConfigurer
+@Configuration
+public class CorsConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
+    }
+}
+
+✔ Centralized
+✔ Best practice for production
+
+3.CORS with Spring Security (Very Important)
+
+⚠️ If Spring Security is enabled, MVC CORS config is ignored unless explicitly enabled.
+Security Configuration (Spring Boot 3.x style)
+
+@Bean
+SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    http
+        .cors()
+        .and()
+        .csrf().disable()
+        .authorizeHttpRequests(auth -> auth
+            .anyRequest().permitAll()
+        );
+
+    return http.build();
+}
+
+Provide CorsConfigurationSource
+@Bean
+CorsConfigurationSource corsConfigurationSource() {
+
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of("http://localhost:3000"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+
+    return source;
+}
+
+
+
+in our project jam  it is used like this , so used this 
+
+ @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+    	
+	CorsConfiguration config = new CorsConfiguration();
+	config.setAllowCredentials(AppConfig.isCorsAllowCredentials());
+        config.setAllowedOrigins(Arrays.asList(AppConfig.getCorsAllowedOrigin()));
+        config.setAllowedMethods(AppConfig.getCorsAllowedMethod());
+        config.setAllowedHeaders(Arrays.asList("*"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+	
+
+	@Bean
+	SecurityFilterChain securityWebFilterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
+		
+		return http.cors(cors -> cors.configurationSource(corsConfigurationSource))
+				
+			.httpBasic(t -> t.disable())           //Disables default browser login popup  , Because you are using:JWT / token-  basedauthentication
+			.csrf(csrf -> csrf.disable()) 
+			.headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(AppConfig.getCSP())))
+	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) 
+	        
+	        .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/auth/**").authenticated()
+	        		.requestMatchers(HttpMethod.POST, "/api/auth/**").authenticated()
+	                .requestMatchers("/api/public/**", "/error").permitAll()
+	                .anyRequest().authenticated())
+	        .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint()).accessDeniedHandler(accessDeniedHandler()))
+	        
+			.addFilterBefore(new AuthenticationFilter(authTokenService, redisService), UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(new AuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
+			
+			.build();
+	}
+
+
+✔ Required when using Spring Security
+✔ Most common production setup
+
+
+Best Practice Summary
+| Scenario             | Approach                                        |
+| -------------------- | ----------------------------------------------- |
+| Single endpoint      | `@CrossOrigin`                                  |
+| Entire API           | `WebMvcConfigurer`                              |
+| With Spring Security | `SecurityFilterChain + CorsConfigurationSource` |
+| Production app       | Global + Security config                        |
+
+
+
+what is magAge there 
+maxAge property controls how long the browser can cache the results of a CORS preflight request.
+
+1️⃣ What is a Preflight Request?
+
+For non-simple requests (like PUT, DELETE, or requests with custom headers), 
+the browser sends an OPTIONS request first.
+This is called a CORS preflight request.
+The server responds with allowed methods, headers, and origins.
+
+2️⃣ maxAge Purpose
+
+maxAge tells the browser:
+“You can reuse this preflight response for the next X seconds without sending another OPTIONS request.”
+Type: long (seconds)
+Default: 1800 (30 minutes) in Spring (if not set)
+
+Browser won’t send OPTIONS for /api/** for 1 hour
+Reduces network traffic
+Improves performance
+
+
+*
+How can you upload a file in spring and spring boot application
+-->
+spring provided a data type called Multipart
+
+-->Steps
+1.Include spring-boot-starter-web
+2.Configure multipart.max-file-size if needed
+3.Use @RequestParam("file") MultipartFile file in controller
+4.Save file locally, database, or cloud
+5.Return ResponseEntity with status and info
+
+
+1.Dependencies ->
+Spring Boot automatically includes multipart support via spring-boot-starter-web. For file storage, 
+you may optionally use spring-boot-starter-thymeleaf for forms or commons-io.
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+
+2.Configure Multipart (optional)-->
+By default, Spring Boot supports multipart uploads. 
+You can configure limits in application.properties or application.yml:
+
+spring.servlet.multipart.max-file-size=10MB       // means Maximum size of a single uploaded file will 10MB , If any one file exceeds 10 MB, Spring will reject the request
+spring.servlet.multipart.max-request-size=20MB    //   Maximum total size of the entire HTTP request  Includes: All files,Form fields,Multipart metadata
+                                                          If the combined request size exceeds 20 MB, the request is rejected
+
+
+3.Controller – Single File Upload
+@RestController
+@RequestMapping("/api/files")
+public class FileController {
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+
+        try {
+            // Save file to local folder (example)
+            Path path = Paths.get("uploads/" + file.getOriginalFilename());
+            Files.createDirectories(path.getParent());
+            Files.write(path, file.getBytes());
+
+            return ResponseEntity.ok("File uploaded successfully: " + file.getOriginalFilename());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error uploading file");
+        }
+    }
+}
+
+Notes:
+@RequestParam("file") binds the uploaded file
+MultipartFile has methods like:
+getOriginalFilename()
+getBytes()
+transferTo(File dest)
+
+
+Controller – Multiple File Uploads
+@PostMapping("/uploadMultiple")
+public ResponseEntity<String> uploadMultiple(@RequestParam("files") MultipartFile[] files) {
+
+    StringBuilder uploadedFiles = new StringBuilder();
+
+    for (MultipartFile file : files) {
+        if (!file.isEmpty()) {
+            try {
+                Path path = Paths.get("uploads/" + file.getOriginalFilename());
+                Files.createDirectories(path.getParent());
+                file.transferTo(path.toFile());
+                uploadedFiles.append(file.getOriginalFilename()).append(", ");
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error uploading files");
+            }
+        }
+    }
+
+    return ResponseEntity.ok("Uploaded files: " + uploadedFiles);
+}
+
+
+
+Large File Uploads -->
+
+Use spring.servlet.multipart.max-file-size and max-request-size to increase limits.
+
+Consider streaming files with InputStream instead of getBytes() to avoid memory issues:
+
+InputStream is = file.getInputStream();
+// save stream to disk or cloud storage
+
+example->
+@PostMapping("/upload")
+public void upload(@RequestParam MultipartFile file) throws IOException {
+    byte[] data = file.getBytes(); // entire file in heap
+    Files.write(Paths.get("/tmp/" + file.getOriginalFilename()), data);
+}
+
+Problems
+    High memory usage
+    Fails with large files
+    Not safe for concurrent uploads
+
+✅ Recommended approach (streaming with InputStream)
+
+@PostMapping("/upload")
+public void upload(@RequestParam MultipartFile file) throws IOException {
+
+    Path target = Paths.get("/tmp/" + file.getOriginalFilename());
+
+    try (InputStream inputStream = file.getInputStream()) {
+        Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+    }
+}
+
+Why this is better
+    Reads file chunk by chunk
+    Memory usage stays low
+    Scales well with large files
+
+
+With MultipartFile, using getBytes() loads the entire file into heap memory, which doesn’t scale. 
+Streaming with InputStream processes data incrementally, making the application memory-efficient and safe for large or concurrent uploads.”
+
+Storing Files Options-->
+
+Local disk – simple, for small apps
+Database (BLOB) – if you need atomic storage
+Cloud storage (AWS S3, GCP, Azure) – scalable, production-ready
+
+
+
+*
+How do you maintain versioning for REST api
+-->
+versioning is useful for backward compatibilty
+
+1.Versioning in URL Path (Most Common)
+Pattern: /api/v1/resource
+
+Controller Example
+@RestController
+@RequestMapping("/api/v1/users")
+public class UserV1Controller {
+
+    @GetMapping("/{id}")
+    public UserDto getUserV1(@PathVariable Long id) {
+        return service.getUserV1(id);
+    }
+}
+
+@RestController
+@RequestMapping("/api/v2/users")
+public class UserV2Controller {
+
+    @GetMapping("/{id}")
+    public UserDtoV2 getUserV2(@PathVariable Long id) {
+        return service.getUserV2(id);
+    }
+}
+
+Pros:
+Simple to implement
+Easy for clients to understand
+
+Cons:
+Can create duplicate code if versions differ slightly
+
+2.Versioning via Request Parameter
+
+Pattern: /api/users?id=1&version=2
+
+Controller Example
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @GetMapping
+    public Object getUser(@RequestParam Long id,
+                          @RequestParam(required = false, defaultValue = "1") int version) {
+
+        if (version == 1) {
+            return service.getUserV1(id);
+        } else {
+            return service.getUserV2(id);
+        }
+    }
+}
+
+Pros:
+Single endpoint
+Easy to switch versions
+
+Cons:
+URL can get messy with multiple query parameters
+Versioning logic inside controller
+
+3.Versioning via HTTP Header
+
+Pattern: Custom header X-API-VERSION: 2
+
+Controller Example
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @GetMapping(value = "/{id}", headers = "X-API-VERSION=1")
+    public UserDto getUserV1(@PathVariable Long id) {
+        return service.getUserV1(id);
+    }
+
+    @GetMapping(value = "/{id}", headers = "X-API-VERSION=2")
+    public UserDtoV2 getUserV2(@PathVariable Long id) {
+        return service.getUserV2(id);
+    }
+}
+
+Pros:
+Keeps URLs clean
+Flexible for advanced clients
+
+Cons:
+Harder for browser testing (headers required)
+Less visible for casual users
+
+4️⃣ Versioning via Media Type / Accept Header (Content Negotiation)
+
+Pattern: Accept: application/vnd.company.app-v2+json
+
+Controller Example
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @GetMapping(value = "/{id}", produces = "application/vnd.company.app-v1+json")
+    public UserDto getUserV1(@PathVariable Long id) {
+        return service.getUserV1(id);
+    }
+
+    @GetMapping(value = "/{id}", produces = "application/vnd.company.app-v2+json")
+    public UserDtoV2 getUserV2(@PathVariable Long id) {
+        return service.getUserV2(id);
+    }
+}
+
+Pros:
+Fully RESTful
+Allows content negotiation
+Clean URLs
+
+Cons:
+More complex for clients
+Harder to test without custom tools
+
+-->Best Practices for API Versioning
+Start with URL versioning (/v1/) — easiest and most visible.
+Avoid breaking changes — deprecate old versions gradually.
+Document versions clearly in Swagger/OpenAPI.
+Separate controllers/services per version to reduce risk of breaking older APIs.
+Consider backward compatibility — e.g., V2 adds optional fields rather than removing fields.
+Use semantic versioning if needed (v1.0, v1.1) for fine-grained changes.
+
+-->Spring Boot Versioning Summary Table
+
+| Approach          | URL Example                           | Pros              | Cons                       |
+| ----------------- | ------------------------------------- | ----------------- | -------------------------- |
+| URL Path          | `/api/v1/users`                       | Simple, visible   | Duplicate controllers      |
+| Request Parameter | `/api/users?version=2`                | Single endpoint   | Messy URLs                 |
+| Custom Header     | `X-API-VERSION: 2`                    | Clean URLs        | Harder for browser testing |
+| Accept Header     | `Accept: application/vnd.app-v2+json` | RESTful, flexible | Complex for clients        |
+
+
+*
+How will you document REST api
+-->
+swagger (earlier name ) now it call open api 3
+
+1.add dependency 
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.1.0</version>
+</dependency>
+
+2.Access Swagger UI
+
+Run your Spring Boot app
+Go to: http://localhost:8080/swagger-ui.html
+OpenAPI JSON: http://localhost:8080/v3/api-docs
+
+3.Annotate REST Controllers
+
+Springdoc generates documentation automatically from:
+@RestController
+@RequestMapping, @GetMapping, @PostMapping
+DTOs (POJOs with fields)
+
+Example
+@RestController
+@RequestMapping("/api/users")
+@Tag(name = "User API", description = "Operations about users")  // like this  for more info
+public class UserController {
+
+    @Operation(summary = "Get user by ID", description = "Provide user ID to retrieve user details")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User found"),
+        @ApiResponse(responseCode = "404", description = "User not found")    // add like this 
+    }) 
+    @GetMapping("/{id}")
+    public UserDto getUser(@PathVariable Long id) {
+        return service.getUserById(id);
+    }
+
+    @Operation(summary = "Create a new user")
+    @PostMapping
+    public ResponseEntity<UserDto> createUser(@RequestBody @Valid UserDto user) {
+        UserDto saved = service.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+}
+
+
+
+*
+How can you hide certain REST endpoints to prevent them from being externaly exposed
+
+-->
+there is annotation @Hidden used it on the method or controller that you dont want to expoosed
+
+Always secure internal endpoints with Spring Security or network restrictions.
+Use profiles or separate ports to isolate internal APIs.
+Hide internal endpoints from documentation using @Hidden in Swagger.
+Avoid relying only on “security through obscurity”.
+
+
+1.Exclude Endpoints from API Documentation (Swagger)
+Sometimes endpoints are internal but still need to exist. You can hide them from Swagger/OpenAPI.
+
+@RestController
+@RequestMapping("/api/internal")
+@Hidden                        // Swagger 3 annotation
+public class InternalController {
+
+    @GetMapping("/metrics")
+    public String getMetrics() {
+        return "Internal metrics";
+    }
+}
+
+@Hidden is from io.swagger.v3.oas.annotations.Hidden
+Endpoint works, but doesn’t show in Swagger UI
+
+
+2.Do Not Map Certain Controllers Publicly
+
+Only include internal controllers in internal profiles.
+Use @Profile("internal") so that the bean/controller is not loaded in production/external profile.
+
+@RestController
+@RequestMapping("/api/internal")
+@Profile("internal")
+public class InternalController {
+
+    @GetMapping("/metrics")
+    public String getMetrics() {
+        return "Internal metrics";
+    }
+}
+
+Only available when Spring Boot runs with --spring.profiles.active=internal
+
+3.Use Spring Security to Restrict Access (Recommended)
+
+The most robust way is authorization. You keep the endpoint in your code, 
+but only allow internal roles or requests from specific clients.
+
+Example: Restrict to ADMIN role
+@RestController
+@RequestMapping("/api/internal")
+public class InternalController {
+
+    @GetMapping("/metrics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String getMetrics() {
+        return "Internal metrics";
+    }
+}
+
+Requires spring-boot-starter-security
+Configure roles and authentication
+External users without ADMIN cannot access it (403 Forbidden)
+
+
+*
+how will you consume RESTful api
+-->
+there are many ways 
+1.RestTemplate
+2.FeignCLient
+3.WebClient
+4.Advanced rest client
+
+
+

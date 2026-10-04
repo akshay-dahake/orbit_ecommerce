@@ -1,0 +1,306 @@
+*
+how will you resolve bean dependency amiguity  or how can we handle multiple bean of same type  
+
+-> suppose the two class implements same interface 
+
+public interface MyService {}
+
+@Component
+public class ServiceA implements MyService {}
+
+@Component
+public class ServiceB implements MyService {}
+
+@Service
+public class ConsumerService {
+
+    private final MyService myService;
+
+    @Autowired
+    public ConsumerService(MyService myService) {
+        this.myService = myService;
+    }
+}
+
+Error: NoUniqueBeanDefinitionException because Spring finds two MyService beans: ServiceA and ServiceB.
+// here it is not able to define from which beans the method to call
+-->ans-
+1.
+Use @Primary (Recommended for default bean)
+
+Mark one bean as primary:
+@Component
+@Primary
+public class ServiceA implements MyService {}
+
+@Component
+public class ServiceB implements MyService {}
+
+Now Spring injects ServiceA by default.
+
+✅ Simple and clean
+⚠️ Only one default can be primary
+
+2.
+Use @Qualifier (Recommended for explicit injection)
+
+Specify exact bean name:
+
+@Component("serviceA")
+public class ServiceA implements MyService {}
+
+@Component("serviceB")
+public class ServiceB implements MyService {}
+
+@Service
+public class ConsumerService {
+
+    private final MyService myService;
+
+    @Autowired
+    public ConsumerService(@Qualifier("serviceB") MyService myService) {
+        this.myService = myService;
+    }
+}
+
+✔ Explicit
+✔ Works well when multiple beans are required in different places
+
+3.
+using @Resource
+
+@Component("serviceA")
+public class ServiceA implements MyService {}
+
+@Component("serviceB")
+public class ServiceB implements MyService {}
+
+@Service
+public class ConsumerService {
+
+    @Resource(name = "serviceB")
+    private MyService myService;
+
+    public void execute() {
+        myService.performTask();
+    }
+}
+How it works:
+
+name = "serviceB" → Spring looks for a bean with that exact name
+Injects ServiceB into myService
+⚠️ Field cannot be final (because Spring sets it via reflection)
+
+
+*
+what is bean scope and diff type of bean scope
+-->
+Bean scope defines the lifecycle and visibility of a Spring bean — i.e., how many instances Spring will create and how long they live.
+By default, all Spring beans are singleton.
+
+
+| Scope       | Instance per          | Lifecycle                                     | Typical Use            |
+| ----------- | --------------------- | --------------------------------------------- | ---------------------- |
+| singleton   | Spring context        | Startup → Shutdown                            | Services, Repositories |
+| prototype   | Each request for bean | New instance created each time                | Temp objects, tasks    |
+| request     | HTTP request          | Starts with request, destroyed after          | Request data holder    |
+| session     | HTTP session          | Starts with session, destroyed on session end | User-specific data     |
+| application | Servlet context       | App-wide                                      | Shared resources       |
+| websocket   | WebSocket session     | Starts with WS session                        | WS-specific data       |
+
+
+Bean scope defines the lifecycle and visibility of a Spring bean. The main scopes are:
+singleton: default, one instance per Spring context
+prototype: new instance every injection
+request: one intance per HTTP request
+session: one instance per HTTP session
+application: one instance per ServletContext
+websocket: one instance per WebSocket session
+
+Examples
+
+4.1 Singleton (Default)
+@Component
+public class MySingletonService {}
+
+@Autowired
+private MySingletonService service1;
+
+@Autowired
+private MySingletonService service2;
+
+service1 == service2 // true, same instance
+
+4.2 Prototype
+2
+@Scope("prototype")
+public class MyPrototypeService {}
+
+@Autowired
+private MyPrototypeService service1;
+
+@Autowired
+private MyPrototypeService service2;
+
+service1 == service2 // false, different instances
+
+4.3 Request Scope (Web Only)
+@Component
+@Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class MyRequestBean {}
+
+
+Spring creates one instance per HTTP request
+proxyMode is required for injection into singleton beans
+
+4.4 Session Scope (Web Only)
+@Component
+@Scope(value = "session", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class MySessionBean {}
+
+One instance per user session
+Useful for storing session-specific data
+
+
+WHY proxyMode is used here?
+-->
+In Spring, proxyMode is used because of how scoped beans (like request/session) are injected into other beans.
+Let’s break it down clearly.
+
+The problem proxyMode solves
+@Scope("request") means:
+
+A new bean instance is created for each HTTP request
+But most beans that depend on it (like @Service, @Component) are:
+Singletons (created once at startup)
+👉 A singleton cannot directly hold a request-scoped bean, because:
+
+At startup, there is no HTTP request yet
+Spring wouldn’t know which request’s instance to inject
+
+What proxyMode does
+@Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+
+This tells Spring:
+“Don’t inject the real request-scoped object.
+Inject a proxy instead.”
+
+That proxy:
+Is a placeholder
+Looks like the real object
+Delegates calls to the correct request-specific instance at runtime
+
+So:
+The singleton bean holds the proxy
+During an HTTP request, the proxy forwards calls to the correct request-scoped bean
+
+Why TARGET_CLASS?
+ScopedProxyMode.TARGET_CLASS
+
+Means:
+Spring creates a class-based proxy (using CGLIB)
+Works even if the class does not implement an interface
+
+Other option:
+ScopedProxyMode.INTERFACES
+
+
+Example scenario
+@Service
+public class MyService {
+    private final RequestBean requestBean;
+
+    public MyService(RequestBean requestBean) {
+        this.requestBean = requestBean;
+    }
+}
+
+@Component
+@Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class RequestBean {
+}
+
+
+What happens:
+MyService is a singleton
+RequestBean is request-scoped
+Spring injects a proxy of RequestBean
+Each HTTP request gets its own real RequestBean instance
+
+Without proxyMode
+You would get an error like:
+Scope 'request' is not active for the current thread
+
+Because Spring tries to create the bean when no request exists.
+
+Summary
+
+proxyMode is needed to safely inject request/session-scoped beans into singletons
+It works by injecting a proxy instead of the real object
+TARGET_CLASS creates a class-based proxy (most common choice)
+
+
+
+*
+can we inject prototype bean in singleton bean ? if yes what happen
+-->
+if we inject prototype bean in singleton bean it behaves as singleton
+
+Yes, it’s allowed
+⚠️ But by default, only one prototype instance is created, not a new one each time you use it.
+
+Singleton bean: created once by Spring
+Prototype bean: supposed to create a new instance every time it’s requested
+
+But when you do this:
+@Component
+public class SingletonBean {
+
+    @Autowired
+    private PrototypeBean prototypeBean;
+}
+
+Why this happens
+Dependency injection happens only once, when the singleton is created
+Spring does not re-inject dependencies every time you call a method
+
+
+How to get a new prototype instance each time
+
+If you truly need a new prototype bean every time, use one of these approaches:
+✅ Option 1: ObjectProvider (recommended)     //object provider is spring utility to obtain beans lazily
+@Component
+public class SingletonBean {
+
+    @Autowired
+    private ObjectProvider<PrototypeBean> prototypeProvider;
+
+    public void usePrototype() {
+        PrototypeBean prototype = prototypeProvider.getObject();      //Every call to getObject() → new prototype instance created
+    }
+}
+✔ A new PrototypeBean is created each time getObject() is called
+
+
+Option 2: @Lookup
+@Component
+public class SingletonBean {
+
+    @Lookup
+    public PrototypeBean getPrototypeBean() {
+        return null;
+    }
+}
+✔ Spring overrides this method to return a new prototype instance each call
+
+
+*
+diff between spring singleton and plain singleton
+
+spring singleton give single instance per application context(scope within application context)
+plain singleton create instance per jvm (scope within jvm)
+
+*
+purpose of BeanPostProcessor ,
+
+

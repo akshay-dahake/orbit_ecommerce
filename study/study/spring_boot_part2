@@ -1,0 +1,215 @@
+*
+purpose of stereotype annotation - to define role of class
+@Component   -> parent stereotype annotation  Generic stereotype,Marks a class as a Spring bean
+@Service     -> inherited from @componet . business logic
+@Repository  -> inherited from @componet , database related work
+@Controller  -> inherited from @componet , web layer related logic , endpoints  , Handles web requests and returns views
+@RestController -> inherited from @componet , web layer related logic , endpoints  , used for REST Apis
+
+
+
+*
+how can you define bean in spring framework
+In the Spring Framework, a bean is any object that is managed by the Spring IoC (Inversion of Control) container. 
+There are several ways to define beans
+1.Using stereotype annotations
+2.Using @Bean inside a @Configuration class
+
+Used when:
+You want full control over bean creation
+You are using third-party classes
+You need custom initialization logic
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public UserService userService() {
+        return new UserService();
+    }
+}
+
+3. Using XML configuration 
+<bean id="userService" class="com.example.UserService"/>
+
+
+---------------------READ OF DI FROM NOTES GROK--------------------------
+*
+what is dependency injection
+
+*
+how many ways di can be perform
+
+*
+when to use which type of di
+ constructor based - when mandatory DI
+ setter based - 
+
+
+*
+@PostCOnstruct -> use to execute the pre processing logic  (on application startup)           
+
+PostConstruct used to mark a method that should be executed immediately after a bean is initialized in Spring.
+
+suppose there is method db in main class  where springbootapplication run() called 
+so 1st run() will execute and immediatly after the db()  will execute as it annoted with @Postconstruct
+
+the method which is annoted with @Postconstruct will follow below rules 
+A @PostConstruct method must:
+✔ Have no parameters
+✔ Return void
+✔ Be non-static
+✔ Be called only once per bean lifecycle
+
+
+*
+how can we dynamically load values in springboot appl
+->
+1.using @value 
+in application.properties or yml file  define the field
+and then where you need it then annoted that with @value
+
+for example 
+in application.properties 
+
+discount.price = 20
+
+in class A i need this then
+
+@value("${discount.price}")    //like this
+private int discountPrice ;
+
+2.Using @ConfigurationProperties (Recommended)
+
+Best for structured and dynamic configs.
+
+ex  application.properties
+app.name=MySpringApp
+app.timeout=5000
+app.server.host=localhost
+app.server.port=8080
+
+
+in class
+@Component
+@ConfigurationProperties(prefix = "app")
+public class AppConfig {
+
+    private String name;
+    private int timeout;
+    private Server server;
+
+}
+Why @ConfigurationProperties is Better Than @Value
+| Feature                  | `@Value` | `@ConfigurationProperties` |
+| ------------------------ | -------- | -------------------------- |
+| Supports properties file | ✅        | ✅                          |
+| Supports YAML            | ✅        | ✅                          |
+| Type-safe                | ❌        | ✅                          |
+| Supports nested objects  | ❌        | ✅                          |
+| Easy to maintain         | ❌        | ✅                          |
+
+type safe means 
+Type checking at runtime: Spring ensures that the value in the configuration matches the type of the field.
+If you accidentally write timeout: "abc" (a string) instead of a number, Spring will fail to start and give an error.
+
+No manual parsing needed: You don’t have to manually convert strings to integers, booleans, lists, etc. Spring does it for you automatically.
+
+*
+diff between properties and yml file  , in what scenario which to use
+
+Both application.yml and application.properties are used for configuration in Spring Boot.
+They do the same job, but they differ in syntax, readability, and use cases.
+
+
+| Aspect         | `application.properties`          | `application.yml`        |
+| -------------- | --------------------------------- | ------------------------ |
+| Format         | Key = Value                       | YAML (indentation-based) |
+| Readability    | Less readable for complex configs | More readable & clean    |
+| Structure      | Flat (dot notation)               | Hierarchical             |
+| Indentation    | Not required                      | **Required**             |
+| Risk of errors | Low                               | Higher (wrong spaces)    |
+| Learning curve | Very easy                         | Moderate                 |
+
+
+Profiles Support (Important Difference)
+Properties (multiple files)
+application-dev.properties
+application-prod.properties
+
+YAML (single file)
+spring:
+  profiles:
+    active: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+server:
+  port: 8081
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 8080
+
+👉
+YAML allows multiple profiles in one file, which is very powerful.
+
+👉 Use application.yml when:
+You have nested configs
+You use @ConfigurationProperties
+You want clean, readable configs
+
+👉 Use application.properties when:
+Config is very small
+You want simplicity
+Team is more comfortable with it
+
+
+
+*
+if configure the same values in both yml and properties file then ? and who will load first
+-> properties file will load 1st
+If the same configuration is present in both application.yml and application.properties, 
+Spring Boot loads both but gives higher priority to application.properties, so its value overrides the YAML value.
+
+*
+how to load external properties in spring boot
+
+Spring Boot loads external properties using command-line arguments, environment variables, 
+and external configuration files via spring.config.location or spring.config.additional-location. 
+These external values override internal configurations based on priority.
+
+in application.properties 
+spring.config.import : file://c/test.properties   // location where you save your file
+
+*
+how to map or bind config properties to java object
+
+In modern Spring Boot, configuration properties are mapped to Java objects using @ConfigurationProperties, 
+which provides type-safe binding, supports nested objects, lists, and validation, and works with both YAML 
+and properties files. For best practice, immutable records are preferred in Spring Boot 3.x.
+ex->
+
+suppose in application.properties
+
+spring.datasource.usename : root
+spring.datasource.password: password
+
+there is class
+
+@Configuration
+@ConfigurationProperties(prefix = "spring.datasource")
+public class Demo{
+	
+	private String username;
+	private String password;
+}
+
+

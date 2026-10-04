@@ -1,0 +1,574 @@
+
+*
+find 2nd highest salary / NTH HIGHEST SALARY 
+
+--> select MAX(salary) from emp where salary < (select MAX(salary) from emp);   // 2nd highest 
+
+
+--> SELECT salary
+FROM Employee
+ORDER BY salary DESC
+LIMIT 1 OFFSET N-1;
+
+--> select salary from emp e1 where N-1  = (           // HERE REPLACE N WITH THE HIGHEST SALARY YOU WANT SUPPOSE 5TH HIGHEST THEN REPLACE N BY 5
+	SELECT COUNT(DISTINCT SALARY) from emp e2 where e2.salary > e1.salary
+);
+
+
+/*  this is for ref 
+Employee(emp_id, name, dept_id, salary, manager_id, hire_date)
+Department(dept_id, dept_name)
+Orders(order_id, customer_id, order_date, amount)
+*/
+
+*
+Find employees earning more than their manager
+
+SELECT e.name 
+from emp e 
+join emp m ON e.managerid = m.empid 
+where e.salary > m.salary;
+
+
+select e.ename from emp e join emp m on e.managerid = m.empid where e.salary > m.salary
+*
+Find duplicate records in a table
+
+select  name , count(*) 
+from emp 
+group by name 
+having count(*) > 1;
+
+
+select name, count(*) from emp group by name having count(*) > 1;
+
+*
+Remove duplicate rows (keep one)
+
+DELETE FROM Employee
+WHERE emp_id NOT IN (
+    SELECT MIN(emp_id)
+    FROM Employee
+    GROUP BY name
+);
+
+DELETE FROM emp where emid not in (select min(empid) from emp group by name);
+
+
+*
+Find departments with no employees
+
+select d.dept_name 
+from dept 
+left join emp e on d.dept_id = e.emp_id 
+where e.emp_id is null;
+
+*
+Find highest salary in each department
+
+select name ,dept_id , Max(salary) 
+from emp 
+group by dept_id;
+
+*
+Find employee with highest salary per department
+
+SELECT *
+FROM (
+    SELECT e.*, DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) rnk
+    FROM Employee e
+) t
+WHERE rnk = 1;
+
+
+*
+Find employees who never placed an order
+
+select e.name 
+from o.orders 
+left join e.emp_id = o.customer_id 
+where o.order_id is null;
+
+
+
+
+9️⃣ Find total salary department-wise
+SELECT dept_id, SUM(salary)
+FROM Employee
+GROUP BY dept_id;
+
+
+📘 Sum aggregation.
+
+🔟 Find 3rd highest salary without window functions
+SELECT MAX(salary)
+FROM Employee
+WHERE salary < (
+    SELECT MAX(salary)
+    FROM Employee
+    WHERE salary < (
+        SELECT MAX(salary) FROM Employee
+    )
+);
+
+
+📘 Nested subqueries.
+
+1️⃣1️⃣ Find employees hired in last 30 days
+SELECT *
+FROM Employee
+WHERE hire_date >= CURRENT_DATE - INTERVAL '30' DAY;
+
+
+📘 Date arithmetic.
+
+1️⃣2️⃣ Find employees with same salary
+SELECT salary
+FROM Employee
+GROUP BY salary
+HAVING COUNT(*) > 1;
+
+
+📘 Duplicate salary detection.
+
+1️⃣3️⃣ Find odd / even rows
+SELECT *
+FROM (
+    SELECT e.*, ROW_NUMBER() OVER (ORDER BY emp_id) rn
+    FROM Employee e
+) t
+WHERE rn % 2 = 0;
+
+
+📘 Uses row numbering.
+
+1️⃣4️⃣ Find top 3 salaries
+SELECT DISTINCT salary
+FROM Employee
+ORDER BY salary DESC
+LIMIT 3;
+
+
+📘 Uses LIMIT.
+
+1️⃣5️⃣ Find employees working under the same manager
+SELECT manager_id, COUNT(*)
+FROM Employee
+GROUP BY manager_id
+HAVING COUNT(*) > 1;
+
+
+📘 Grouping by manager.
+
+1️⃣6️⃣ Find second highest salary in each department
+SELECT *
+FROM (
+    SELECT e.*, DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) rnk
+    FROM Employee e
+) t
+WHERE rnk = 2;
+
+
+
+2nd way 
+SELECT e1.department_id, e1.emp_id, e1.name, e1.salary
+FROM Employee e1
+WHERE e1.salary = (
+    SELECT MAX(e2.salary)
+    FROM Employee e2
+    WHERE e2.department_id = e1.department_id
+      AND e2.salary < (
+          SELECT MAX(salary)
+          FROM Employee
+          WHERE department_id = e1.department_id
+      )
+);
+
+
+
+📘 Partition + rank.
+
+1️⃣7️⃣ Find employees whose name starts with 'A'
+SELECT *
+FROM Employee
+WHERE name LIKE 'A%';
+
+
+📘 Pattern matching.
+
+1️⃣8️⃣ Swap gender values (M ↔ F)
+UPDATE Employee
+SET gender = CASE
+    WHEN gender = 'M' THEN 'F'
+    WHEN gender = 'F' THEN 'M'
+END;
+
+
+📘 Conditional update.
+
+1️⃣9️⃣ Find customers with more than 1 order
+SELECT customer_id
+FROM Orders
+GROUP BY customer_id
+HAVING COUNT(*) > 1;
+
+
+📘 Aggregation filter.
+
+2️⃣0️⃣ Find cumulative salary
+SELECT emp_id, salary,
+       SUM(salary) OVER (ORDER BY emp_id) AS cumulative_salary
+FROM Employee;
+
+
+📘 Window aggregation.
+
+2️⃣1️⃣ Find employees without manager (CEO)
+SELECT *
+FROM Employee
+WHERE manager_id IS NULL;
+
+
+📘 Null check.
+
+2️⃣2️⃣ Find last record in table
+SELECT *
+FROM Employee
+ORDER BY emp_id DESC
+LIMIT 1;
+
+
+📘 Sort + limit.
+
+2️⃣3️⃣ Find employees in HR or IT department
+SELECT e.*
+FROM Employee e
+JOIN Department d ON e.dept_id = d.dept_id
+WHERE d.dept_name IN ('HR', 'IT');
+
+
+📘 IN condition.
+
+2️⃣4️⃣ Find salary difference between max and min
+SELECT MAX(salary) - MIN(salary) AS diff
+FROM Employee;
+
+
+📘 Aggregate arithmetic.
+
+2️⃣5️⃣ Find employees with same name but different department
+SELECT name
+FROM Employee
+GROUP BY name
+HAVING COUNT(DISTINCT dept_id) > 1;
+
+
+📘 Uses COUNT(DISTINCT).
+
+
+
+------------------------------------------------------------
+
+you tube
+
+2nd highest 
+->select empname , salary from emp where sal < (select MAX(salary) from emp);
+
+dept wise max salary 
+->select deptname, MAX(salary) from emp group by deptname
+
+display alternate records
+->  select * from (select empname, salary , ROW_NUMBER() OVER (ORDER BY emp_id) as rn from emp )t where rn % 2 = 0;  // t is just alias for subquery
+
+display duplicate and frequency 
+-> select empname , count(*) from emp group by empname having count(*) > 1;
+
+display nth row 
+-> select * from emp order by empid limit 1 offset 4    // for 5 th row   limit 1 means return 1 row and offset 4 ->skip first 4 rows
+
+
+
+------------------------------------------------
+16. Find 2nd highest salary (without LIMIT).
+SELECT MAX(salary)
+FROM employees
+WHERE salary < (SELECT MAX(salary) FROM employees);
+
+17. Delete duplicate records.
+DELETE e1
+FROM users e1
+JOIN users e2
+ON e1.email = e2.email
+AND e1.id > e2.id;
+
+18. Find records present in table A but not in B.
+SELECT a.*
+FROM tableA a
+LEFT JOIN tableB b ON a.id = b.id
+WHERE b.id IS NULL;
+
+19. Count records per month.
+SELECT DATE_TRUNC('month', created_at), COUNT(*)
+FROM orders
+GROUP BY 1;
+
+20. Pagination problem with OFFSET?
+
+Answer:
+
+OFFSET scans rows → slow on large tables
+
+Better approach (Keyset Pagination):
+
+SELECT * FROM orders
+WHERE id > last_seen_id
+LIMIT 10;
+
+
+
+Perfect 👍
+Below are HANDS-ON SQL INTERVIEW QUESTIONS WITH FULL SOLUTIONS for 3–6 years experience in MySQL & PostgreSQL.
+These are actual coding-round / technical-round level questions.
+
+🔥 HANDS-ON SQL INTERVIEW QUESTIONS WITH SOLUTIONS
+🟢 TABLES USED
+employees
+id	name	department	salary	manager_id	join_date
+orders
+order_id	customer_id	amount	order_date
+customers
+
+| customer_id | name | city |
+
+1️⃣ Find the Nth Highest Salary
+
+Question: Find 3rd highest salary.
+
+✅ Solution (MySQL / PostgreSQL)
+SELECT DISTINCT salary
+FROM employees e1
+WHERE 3 = (
+  SELECT COUNT(DISTINCT salary)
+  FROM employees e2
+  WHERE e2.salary >= e1.salary
+);
+
+2️⃣ Find Employees Who Earn More Than Their Manager
+✅ Solution
+SELECT e.name
+FROM employees e
+JOIN employees m ON e.manager_id = m.id
+WHERE e.salary > m.salary;
+
+3️⃣ Find Duplicate Records (by email)
+✅ Solution
+SELECT email, COUNT(*)
+FROM users
+GROUP BY email
+HAVING COUNT(*) > 1;
+
+4️⃣ Delete Duplicate Records (Keep lowest ID)
+✅ Solution
+DELETE u1
+FROM users u1
+JOIN users u2
+ON u1.email = u2.email
+AND u1.id > u2.id;
+
+5️⃣ Find Customers Who Never Placed an Order
+✅ Solution
+SELECT c.*
+FROM customers c
+LEFT JOIN orders o
+ON c.customer_id = o.customer_id
+WHERE o.customer_id IS NULL;
+
+6️⃣ Find Total Sales Per Month
+✅ PostgreSQL
+SELECT DATE_TRUNC('month', order_date) AS month,
+       SUM(amount)
+FROM orders
+GROUP BY 1;
+
+✅ MySQL
+SELECT DATE_FORMAT(order_date, '%Y-%m') AS month,
+       SUM(amount)
+FROM orders
+GROUP BY month;
+
+7️⃣ Find Second Most Recent Order
+✅ Solution
+SELECT *
+FROM orders
+ORDER BY order_date DESC
+LIMIT 1 OFFSET 1;
+
+8️⃣ Fetch Only Even Rows from Table
+✅ Solution
+SELECT *
+FROM (
+  SELECT *, ROW_NUMBER() OVER() AS rn
+  FROM employees
+) t
+WHERE rn % 2 = 0;
+
+9️⃣ Find Department-wise Highest Salary
+✅ Solution
+SELECT department, MAX(salary)
+FROM employees
+GROUP BY department;
+
+🔟 Fetch Employees Joined in Last 6 Months
+✅ PostgreSQL
+SELECT *
+FROM employees
+WHERE join_date >= CURRENT_DATE - INTERVAL '6 months';
+
+✅ MySQL
+SELECT *
+FROM employees
+WHERE join_date >= CURDATE() - INTERVAL 6 MONTH;
+
+1️⃣1️⃣ Running Total of Salary
+✅ Solution
+SELECT name, salary,
+SUM(salary) OVER (ORDER BY salary) AS running_total
+FROM employees;
+
+1️⃣2️⃣ Find Customers with More Than 3 Orders
+✅ Solution
+SELECT customer_id
+FROM orders
+GROUP BY customer_id
+HAVING COUNT(*) > 3;
+
+1️⃣3️⃣ Find Highest Paid Employee in Each Department
+✅ Solution
+SELECT *
+FROM (
+  SELECT *, 
+  RANK() OVER (PARTITION BY department ORDER BY salary DESC) rnk
+  FROM employees
+) t
+WHERE rnk = 1;
+
+1️⃣4️⃣ Swap Male and Female Values
+✅ Solution
+UPDATE users
+SET gender = CASE
+  WHEN gender = 'M' THEN 'F'
+  WHEN gender = 'F' THEN 'M'
+END;
+
+1️⃣5️⃣ Find Consecutive Login Days
+✅ Solution
+SELECT user_id
+FROM (
+  SELECT user_id, login_date,
+  login_date - ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY login_date) AS grp
+  FROM logins
+) t
+GROUP BY user_id, grp
+HAVING COUNT(*) >= 3;
+
+1️⃣6️⃣ Pagination WITHOUT OFFSET (Keyset)
+✅ Solution
+SELECT *
+FROM orders
+WHERE order_id > 100
+ORDER BY order_id
+LIMIT 10;
+
+1️⃣7️⃣ Find Missing IDs
+✅ Solution
+SELECT t1.id + 1 AS missing_id
+FROM table1 t1
+LEFT JOIN table1 t2
+ON t1.id + 1 = t2.id
+WHERE t2.id IS NULL;
+
+1️⃣8️⃣ Difference Between COUNT(*) and COUNT(column)
+✅ Answer:
+
+COUNT(*) → counts rows (includes NULLs)
+
+COUNT(column) → ignores NULLs
+
+1️⃣9️⃣ Prevent Duplicate Inserts
+✅ Solution
+CREATE UNIQUE INDEX idx_email ON users(email);
+
+2️⃣0️⃣ Find Top 10% Highest Salaries
+✅ PostgreSQL
+SELECT *
+FROM employees
+WHERE salary >= (
+  SELECT PERCENTILE_CONT(0.9) 
+  WITHIN GROUP (ORDER BY salary)
+  FROM employees
+);
+
+MySQL SOLN
+
+SELECT *
+FROM employees
+ORDER BY salary DESC
+LIMIT (SELECT CEIL(COUNT(*) * 0.1) FROM employees);
+
+ -------------------------------------------------------
+ 
+ practice queries
+ 
+ Select concat(first_name , ' ', last_name)
+	ROUND(height % 30.48, 1) as height_feet    // 1 for 1 decimal point value added
+	ROUND(WEIGHT * 2.14, 0) AS weight_pound    // 0
+	birth_date
+	
+	CASE 
+		WHEN gender = 'M' then 'MALE'
+	  ELSE 'FEMALE'
+	
+	END AS gender_type
+	
+from patient;
+
+
+select patient_id ,first_name , last_name
+FROM patients
+where patient_id NOT IN (select admissions.patient_id from admissions);
+
+
+
+*
+
+display a single row with max, min, avg no of admission, avg rounded of to 2 decimal
+
+select MAX(no_of_admissions),
+       MIN(no_of_admissions),
+       ROUND(AVG(no_of_admissions,2))
+from
+(select admission_date , count(*) as no_of_admissions
+from admissions
+group by admission_date);
+
+
+
+*
+
+select 
+	FLOOR(weight / 10) * 10  as weight_group       // this is to make the group like 0-9 group 0 , 110 - 119 group 110 ....
+	count(*)
+from patients
+group by weight_group
+order by weight_group DESC
+
+
+*
+select patient_id , weight , height 
+	(case when weight / POWER((height/100), 2)  >= 30 
+	then 1
+     else 0
+	
+	end) as isObese 
+	
+from patients;

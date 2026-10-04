@@ -1,0 +1,376 @@
+*
+why spring boot over spring 
+
+| Feature               | Spring Framework                                  | Spring Boot                                     |
+| --------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| Definition            | Core Java framework for enterprise applications   | Extension of Spring that simplifies development |
+| Configuration         | Requires manual configuration (XML / Java Config) | Auto-configuration (minimal setup)              |
+| Setup Time            | Slow and complex                                  | Fast and easy                                   |
+| Boilerplate Code      | More boilerplate code                             | Very little boilerplate                         |
+| Dependency Management | Manage dependencies manually                      | Starter dependencies handle versions            |
+| Server                | External server required (Tomcat, etc.)           | Embedded server (Tomcat/Jetty/Undertow)         |
+| Deployment            | WAR file                                          | JAR file (standalone app)                       |
+| Microservices Support | Possible but complex                              | Ideal for microservices                         |
+| Production Features   | Must configure manually                           | Built-in (Actuator, metrics, health checks)     |
+| Learning Curve        | Steep                                             | Easy                                            |
+| Opinionated Defaults  | No                                                | Yes (but customizable)                          |
+| Best Use Case         | Legacy systems, fine-grained control              | Modern apps, REST APIs, microservices           |
+
+
+1. Less configuration
+
+With Spring:
+<bean id="dataSource" class="...">
+
+With Spring Boot:
+@SpringBootApplication
+
+
+That’s often enough to start 🚀
+
+2. Embedded server
+Spring → deploy WAR to Tomcat
+Spring Boot → Tomcat comes built-in
+
+Just run:
+java -jar app.jar
+
+3. Starter dependencies
+Instead of managing many libraries:
+
+spring-boot-starter-web
+spring-boot-starter-data-jpa
+spring-boot-starter-security
+
+Boot picks compatible versions automatically.
+
+4. Production-ready features
+Spring Boot includes:
+Health checks
+Metrics
+Logging defaults
+Externalized configuration
+(All via Spring Boot Actuator)
+
+When would you use plain Spring?
+
+You might choose Spring without Boot if:
+You’re maintaining a very old legacy project
+You need extreme control over every configuration detail
+You’re learning Spring internals deeply
+For most modern apps, Boot is preferred.
+
+Simple analogy 🧠
+
+Spring = building a car from parts
+Spring Boot = buying a car that’s ready to drive (but you can still customize it)
+
+
+Spring is a powerful framework for building enterprise Java applications, but it requires a lot of manual configuration and setup.
+
+Spring Boot is built on top of Spring and solves these problems by providing auto-configuration, embedded servers, and starter dependencies, which allow developers to create production-ready applications quickly with minimal configuration.
+
+👉 Spring Boot reduces development time while still using all Spring features.
+
+🧠 One-Line Answer (Very Common Interview Question)
+
+Spring Boot is a convention-over-configuration framework that simplifies Spring application development by providing auto-configuration, embedded servers, and starter dependencies.
+
+🔑 Key Interview Points to Remember
+
+Spring Boot is not a replacement for Spring
+Spring Boot uses Spring internally
+Boot is preferred for:
+
+REST APIs
+Microservices
+Rapid development
+
+📝 Quick Memory Trick
+
+Spring → “You configure everything”
+Spring Boot → “It configures itself (mostly)”
+
+
+*
+what starters you worked on
+-->
+Spring Boot Starters are predefined dependency bundles provided by
+Spring Boot that help you quickly add functionality to your application without manually managing multiple dependencies.
+A starter is a ready-made set of dependencies for a specific feature.
+Instead of adding many libraries one by one, you just add one starter.
+
+spring boot starter web - Used to create REST APIs and web applications using Spring MVC with embedded Tomcat.
+spring boot starter data JPA - Simplifies database access using JPA repositories and Hibernate.
+spring boot starter webservices
+spring boot starter security - Provides authentication and authorization with minimal configuration.
+redis
+tomcat
+devtools
+jdbc
+spring-boot-starter-test - Provides testing support with JUnit and Mockito. used for unit and integration testing
+spring-boot-starter-actuator - Provides production-ready features like health checks and metrics.
+spring-boot-starter-mail - Used to send emails from Spring Boot applications.
+and so on....
+
+
+* 
+how will you run your spring boot application
+A Spring Boot application is run using the main method which calls SpringApplication.run() and starts the embedded server.
+it has annotation main class annotated with @SpringBootApplication.
+
+1. from IDE (ECLIPSE ,STS) by run
+2. by mvn plugin   ->  mvn spring-boot:run   -> how this load the jar file  -->
+ it directly excute the application from target - classes folder  there are compiled classes - and picked the main class   and trigger the run method from main class
+ jar file is not seen right now 
+ 
+ when we build the application jar will be created  
+ internal of jar 
+ web inf and meta inf is created
+ in meta inf there is file manifest -> here it contains everything that needs to trigger spring boot application
+ 			like starter class , spring boot version , jdk version
+
+
+What happens when the application starts?
+👉 Spring context loads → beans are created → embedded server starts.
+
+
+* 
+what happens internally when spring boot application  starts?
+
+🔹 1. main() method is executed
+SpringApplication.run(MyApplication.class, args);
+
+What happens:
+JVM starts
+SpringApplication object is created
+👉 Interview line:
+Application starts from the main method using SpringApplication.run().
+
+🔹 2. Application type is determined
+Spring Boot checks:
+Is it a web application?
+Is it Servlet-based, Reactive, or Non-web?
+
+Based on classpath:
+spring-web → Servlet app
+spring-webflux → Reactive app
+
+👉 Interview line:
+Spring Boot identifies the application type based on classpath.
+
+🔹 3. Environment is prepared
+Spring Boot:
+Loads application.properties / application.yml
+Reads command-line arguments
+Sets active profiles (dev, test, prod)
+
+👉 Interview line:
+Spring Boot prepares the environment and loads configuration properties.
+
+🔹 4. Banner is displayed
+
+Default Spring Boot banner is printed
+Can be customized or disabled
+(Not critical, but often asked)
+
+🔹 5. ApplicationContext is created
+Based on application type:
+
+AnnotationConfigServletWebServerApplicationContext (web)
+AnnotationConfigApplicationContext (non-web)
+
+👉 Interview line:
+Spring creates the appropriate ApplicationContext.
+
+🔹 6. Bean definitions are loaded
+
+Spring Boot:
+Scans packages (@ComponentScan)
+Finds beans (@Component, @Service, @Repository, @Controller)
+Loads configuration classes (@Configuration)
+
+👉 Interview line:
+Spring scans and registers all bean definitions.
+
+🔹 7. Auto-configuration is applied
+
+Spring Boot:
+Uses @EnableAutoConfiguration
+Reads spring.factories
+Configures beans automatically (DataSource, JPA, Security, etc.)
+Example:
+If MySQL is present → configures DataSource
+If Spring MVC is present → configures DispatcherServlet
+
+👉 Interview line:
+Spring Boot auto-configures beans based on classpath and properties.
+
+🔹 8. Embedded server is started
+Embedded Tomcat (default) starts
+Server binds to configured port (8080 by default)
+
+👉 Interview line:
+Embedded web server is started automatically.
+
+🔹 9. Beans are instantiated & dependency injection happens
+Beans are created
+Dependencies injected (@Autowired)
+Bean lifecycle methods executed
+
+👉 Interview line:
+Spring creates beans and performs dependency injection.
+
+🔹 10. ApplicationRunner / CommandLineRunner executed
+If present:
+CommandLineRunner
+ApplicationRunner
+
+They run after context initialization.
+
+👉 Interview line:
+Startup logic is executed using runners.
+
+🔹 11. Application is ready to serve requests
+Context is fully initialized
+Controllers are mapped
+App listens for HTTP requests
+
+👉 Interview line:
+Application is now ready to handle client requests.
+
+🧠 One-Minute Interview Summary (Memorize This)
+When a Spring Boot application starts, the main method calls SpringApplication.run(). 
+Spring Boot determines the application type from classpath means from dependencies from pom.xml, prepares the environment and loads the configuration file, creates the ApplicationContext, scans and registers beans, 
+applies auto-configuration, starts the embedded server, performs dependency injection, and finally makes the application ready to serve requests.
+
+
+*
+@componentscan
+-> enable component scanning in packeage where there is main class and its sub packages
+
+suppose main class is in com.demo package and its sub packages are like com.demo.repository , com .demo.controller then it will scan it in this all package
+
+but suppose there is another package com.example and the for at any of class we apply @componentscan then that will not get scan or load that particular bean because main class is not in that package so it will not get loaded in context by default
+ex -  public class A {
+
+	public A{
+		sop("component scan");
+		
+	}
+}
+	
+}
+//so this will not get print 	
+
+for that we need to mention with @SpringBootApplication that we need to scan or load  outside the package of main class like this 
+
+@SpringBootApplication(scanBasePackages = "com.example")  // so here it will scan in com.example also and now the stmt get print
+
+@componentscan-->
+“Scan packages and register Spring beans automatically”
+What gets scanned?
+Classes annotated with:
+@Component
+@Service
+@Repository
+@Controller
+@RestController
+@Configuration
+
+
+
+* 
+@configuration - it allow to register the extra bean in context or import additional config classes
+		@Configuration is used to define Spring-managed beans
+
+
+@Configuration -> it tells the spring boot  this is my config class please import at application startup
+public class A {
+}
+
+
+
+*
+@EnableAutoConfiguration
+
+Tells Spring Boot:
+    “Automatically configure beans based on the classpath(means dependencies from pom.xml), environment, and properties”
+    
+ @EnableAutoConfiguration
+     ├── Read spring.factories
+     ├── Apply conditions
+     └── Configure beans automatically
+     
+for auto configuaration Spring Boot uses:
+
+for classpath search for dependency in pom.xml
+
+AutoConfigurationImportSelector is imp class
+Selector loads auto-configurations from:
+AutoConfiguration.imports
+
+
+org.springframework.boot.autoconfigure.AutoConfiguration.imports
+
+
+org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
+org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+  
+Each auto-configuration class uses conditions.
+based on this condition the auto configuration is decided
+ex of conditions are @ConditionalOnClass, @ConditionalOnMissingBean etc....
+
+Example:
+@Configuration
+@ConditionalOnClass(DataSource.class)
+@ConditionalOnProperty(name = "spring.datasource.url")
+public class DataSourceAutoConfiguration {
+}
+
+What this means
+Spring checks:
+Is DataSource.class on the classpath?
+Is spring.datasource.url defined?
+
+✔ If yes → configure DataSource
+❌ If no → skip configuration
+
+until the all condn wont match till then auto configatation will not happen for that particular dependency
+
+
+     
+*
+@SpringBootApplication
+
+It does:
+    Marks class as configuration (@SpringBootConfiguration)
+    Scans components (@ComponentScan)
+    Loads auto configurations (@EnableAutoConfiguration)
+    Applies conditions
+    Registers beans
+    Starts embedded server (Tomcat/Jetty/etc)
+
+
+*
+how can you disable the auto configuration for a specific class
+-->
+@SpringBootApplication (exclude = {DataSourceAutoConfiguration.class})   like this 
+
+we can also exclude it in application.properties file 
+spring.autoconfigure.exclude=\
+org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration   // like this but here you need to give complete name from package and all
+
+
+
+*
+commandLineRunner 
+commandLineRunner is a functional interface having abstract run method 
+this run method diff from springApplication run method
+anything  you want to execute just after  application startup keep that inside the run method of commandLineRunner 
+ex -  db connection, pre processing logic
+
+commandLineRunner run method will  execute after springApplication run method
+
+

@@ -1,0 +1,39 @@
+two types of mode 
+1.command mode
+2.insert mode
+
+press i for insert mode 
+to move from insert mode to command mode press esc button
+
+in command mode 
+ press h to move cursor to left side
+ press l to move cursor to right side 
+ press j to move cursor to downward 
+ press k to move cursor to upwward 
+ 
+ 
+ in insertion mode 
+ a insertion begin after the cursor
+ A insertion begin at end of line
+ o for new line below cursor
+ O new line above cursor
+ 
+ 
+ 
+ for copy go to command mode 
+ press yy for copy 
+ press p for paste
+ 
+ 
+ for save the content go to command mode
+ :w to save the file
+ 
+ :w abc.txt  -> to save with file name
+ 
+ :q to quit the file
+ 
+ if done any changes in file but dont want to save the changes and want to quit then
+ :q!
+ 
+ :wq -> to save the changes and quit
+ 

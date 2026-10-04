@@ -1,0 +1,427 @@
+Share top 20 must-solve interview problems
+
+Perfect 👍
+Here are the TOP 20 must-solve DSA interview problems that cover ~80% of what is asked for 3+ years Java roles.
+These are pattern-based, not random.
+
+
+🟢 Stack & Queue
+1️⃣2️⃣ Valid Parentheses
+
+Pattern: Stack
+
+Very frequently asked
+
+Clean logic expected
+
+1️⃣3️⃣ Next Greater Element
+
+Pattern: Monotonic Stack
+
+Tests stack mastery
+
+1️⃣4️⃣ Min Stack
+
+Pattern: Stack with auxiliary data
+
+Tests design thinking
+
+🟢 Trees (Binary Tree / BST)
+1️⃣5️⃣ Binary Tree Inorder Traversal
+
+Pattern: DFS / Recursion
+
+Foundation for all tree problems
+
+1️⃣6️⃣ Maximum Depth of Binary Tree
+
+Pattern: Recursion
+
+Easy but tests recursion clarity
+
+1️⃣7️⃣ Lowest Common Ancestor (Binary Tree)
+
+Pattern: DFS
+
+Common mid-level question
+
+1️⃣8️⃣ Validate Binary Search Tree
+
+Pattern: Inorder traversal / Range check
+
+Tests BST understanding
+
+🟢 Searching & Sorting
+1️⃣9️⃣ Binary Search
+
+Pattern: Divide & Conquer
+
+MUST be perfect (edge cases!)
+
+2️⃣0️⃣ Search in Rotated Sorted Array
+
+Pattern: Modified Binary Search
+
+Very popular interview question
+
+📌 Why THESE 20?
+
+These problems cover:
+
+✅ 2 pointers
+
+✅ Sliding window
+
+✅ HashMap mastery
+
+✅ Recursion
+
+✅ Tree traversal
+
+✅ Stack patterns
+
+✅ Binary search logic
+
+👉 If you can solve + explain these clearly, you are interview-ready for most 3+ year Java roles.
+
+🎯 How to practice them (IMPORTANT)
+
+For each problem:
+
+Explain brute force
+
+Explain optimized approach
+
+Write clean Java code
+
+State time & space complexity
+
+Handle edge cases
+
+💡 Interview Tip
+
+If you say:
+
+“This problem follows the sliding window pattern”
+
+Interviewers instantly know you understand DSA properly.
+
+If you want, I can:
+
+Provide Java solutions for all 20
+
+Create a 7-day revision plan
+
+Share common follow-up questions
+
+Conduct a mock interview using these problems
+
+Just tell me what you want next 🚀
+
+Provide Java solutions for all 20
+
+Perfect 👍
+Below are clean, interview-ready Java solutions for all TOP 20 problems.
+I’ve kept them simple, readable, and optimized, exactly how interviewers expect.
+
+1️⃣ Two Sum
+
+Pattern: HashMap
+Find two numbers that add up to a target
+Tests hashing + optimization
+
+✅ 1️⃣ Two Sum (HashMap)
+public int[] twoSum(int[] nums, int target) {
+    Map<Integer, Integer> map = new HashMap<>();
+    for (int i = 0; i < nums.length; i++) {
+        int complement = target - nums[i];
+        if (map.containsKey(complement)) {
+            return new int[]{map.get(complement), i};
+        }
+        map.put(nums[i], i);
+    }
+    return new int[]{};
+}
+
+
+⏱️ O(n), 🧠 O(n)
+
+2️⃣ Maximum Subarray (Kadane’s Algorithm)
+Pattern: Prefix / Greedy
+Find maximum sum contiguous subarray
+
+✅ 2️⃣ Maximum Subarray (Kadane)
+public int maxSubArray(int[] nums) {
+    int max = nums[0], curr = nums[0];
+    for (int i = 1; i < nums.length; i++) {
+        curr = Math.max(nums[i], curr + nums[i]);
+        max = Math.max(max, curr);
+    }
+    return max;
+}
+
+3️⃣ Longest Substring Without Repeating Characters
+Pattern: Sliding Window + HashSet/Map
+Very frequently asked
+Tests window expansion & shrinking
+
+✅ 3️⃣ Longest Substring Without Repeating Characters
+public int lengthOfLongestSubstring(String s) {
+    Set<Character> set = new HashSet<>();
+    int left = 0, max = 0;
+
+    for (int right = 0; right < s.length(); right++) {
+        while (set.contains(s.charAt(right))) {
+            set.remove(s.charAt(left++));
+        }
+        set.add(s.charAt(right));
+        max = Math.max(max, right - left + 1);
+    }
+    return max;
+}
+
+4️⃣ Move Zeroes
+Pattern: Two Pointers
+In-place modification
+Tests array manipulation
+
+✅ 4️⃣ Move Zeroes
+public void moveZeroes(int[] nums) {
+    int index = 0;
+    for (int num : nums) {
+        if (num != 0) nums[index++] = num;
+    }
+    while (index < nums.length) nums[index++] = 0;
+}
+
+5️⃣ Rotate Array
+Pattern: Reverse / Modulo
+Common follow-up question
+Tests space optimization
+
+✅ 5️⃣ Rotate Array
+public void rotate(int[] nums, int k) {
+    k %= nums.length;
+    reverse(nums, 0, nums.length - 1);
+    reverse(nums, 0, k - 1);
+    reverse(nums, k, nums.length - 1);
+}
+
+private void reverse(int[] nums, int l, int r) {
+    while (l < r) {
+        int temp = nums[l];
+        nums[l++] = nums[r];
+        nums[r--] = temp;
+    }
+}
+
+6️⃣ First Non-Repeating Character in String
+Pattern: HashMap / Frequency Count
+Tests order + counting
+
+✅ 6️⃣ First Non-Repeating Character
+public int firstUniqChar(String s) {
+    int[] freq = new int[26];
+    for (char c : s.toCharArray()) freq[c - 'a']++;
+    for (int i = 0; i < s.length(); i++) {
+        if (freq[s.charAt(i) - 'a'] == 1) return i;
+    }
+    return -1;
+}
+
+7️⃣ Group Anagrams
+Pattern: HashMap + Sorting
+Very common in product companies
+
+✅ 7️⃣ Group Anagrams
+public List<List<String>> groupAnagrams(String[] strs) {
+    Map<String, List<String>> map = new HashMap<>();
+    for (String s : strs) {
+        char[] arr = s.toCharArray();
+        Arrays.sort(arr);
+        String key = new String(arr);
+        map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);
+    }
+    return new ArrayList<>(map.values());
+}
+
+8️⃣ Subarray Sum Equals K
+Pattern: Prefix Sum + HashMap
+Tests deep understanding of hashing
+
+
+✅ 8️⃣ Subarray Sum Equals K
+public int subarraySum(int[] nums, int k) {
+    Map<Integer, Integer> map = new HashMap<>();
+    map.put(0, 1);
+    int sum = 0, count = 0;
+
+    for (int num : nums) {
+        sum += num;
+        count += map.getOrDefault(sum - k, 0);
+        map.put(sum, map.getOrDefault(sum, 0) + 1);
+    }
+    return count;
+}
+
+🟢 Linked List
+9️⃣ Reverse a Linked List
+Pattern: Iterative / Recursion
+Must know by heart
+
+✅ 9️⃣ Reverse Linked List
+public ListNode reverseList(ListNode head) {
+    ListNode prev = null;
+    while (head != null) {
+        ListNode next = head.next;
+        head.next = prev;
+        prev = head;
+        head = next;
+    }
+    return prev;
+}
+
+🔟 Detect Cycle in Linked List
+Pattern: Floyd’s Cycle Detection
+Tests algorithmic thinking
+
+✅ 🔟 Detect Cycle in Linked List
+public boolean hasCycle(ListNode head) {
+    ListNode slow = head, fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+        if (slow == fast) return true;
+    }
+    return false;
+}
+
+
+
+1️⃣1️⃣ Find Middle of Linked List
+Pattern: Slow & Fast pointers
+Simple but important
+
+✅ 1️⃣1️⃣ Middle of Linked List
+public ListNode middleNode(ListNode head) {
+    ListNode slow = head, fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+    }
+    return slow;
+}
+
+✅ 1️⃣2️⃣ Valid Parentheses
+public boolean isValid(String s) {
+    Stack<Character> stack = new Stack<>();
+    for (char c : s.toCharArray()) {
+        if (c == '(') stack.push(')');
+        else if (c == '{') stack.push('}');
+        else if (c == '[') stack.push(']');
+        else if (stack.isEmpty() || stack.pop() != c) return false;
+    }
+    return stack.isEmpty();
+}
+
+✅ 1️⃣3️⃣ Next Greater Element
+public int[] nextGreaterElement(int[] nums) {
+    int[] res = new int[nums.length];
+    Stack<Integer> stack = new Stack<>();
+
+    for (int i = nums.length - 1; i >= 0; i--) {
+        while (!stack.isEmpty() && stack.peek() <= nums[i]) stack.pop();
+        res[i] = stack.isEmpty() ? -1 : stack.peek();
+        stack.push(nums[i]);
+    }
+    return res;
+}
+
+✅ 1️⃣4️⃣ Min Stack
+class MinStack {
+    Stack<Integer> stack = new Stack<>();
+    Stack<Integer> min = new Stack<>();
+
+    public void push(int val) {
+        stack.push(val);
+        if (min.isEmpty() || val <= min.peek()) min.push(val);
+    }
+
+    public void pop() {
+        if (stack.pop().equals(min.peek())) min.pop();
+    }
+
+    public int top() { return stack.peek(); }
+    public int getMin() { return min.peek(); }
+}
+
+✅ 1️⃣5️⃣ Inorder Traversal
+public List<Integer> inorderTraversal(TreeNode root) {
+    List<Integer> res = new ArrayList<>();
+    inorder(root, res);
+    return res;
+}
+
+private void inorder(TreeNode root, List<Integer> res) {
+    if (root == null) return;
+    inorder(root.left, res);
+    res.add(root.val);
+    inorder(root.right, res);
+}
+
+✅ 1️⃣6️⃣ Max Depth of Binary Tree
+public int maxDepth(TreeNode root) {
+    if (root == null) return 0;
+    return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
+}
+
+✅ 1️⃣7️⃣ Lowest Common Ancestor
+public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+    if (root == null || root == p || root == q) return root;
+    TreeNode left = lowestCommonAncestor(root.left, p, q);
+    TreeNode right = lowestCommonAncestor(root.right, p, q);
+    if (left != null && right != null) return root;
+    return left != null ? left : right;
+}
+
+✅ 1️⃣8️⃣ Validate BST
+public boolean isValidBST(TreeNode root) {
+    return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);
+}
+
+private boolean validate(TreeNode node, long min, long max) {
+    if (node == null) return true;
+    if (node.val <= min || node.val >= max) return false;
+    return validate(node.left, min, node.val) &&
+           validate(node.right, node.val, max);
+}
+
+✅ 1️⃣9️⃣ Binary Search
+public int binarySearch(int[] nums, int target) {
+    int l = 0, r = nums.length - 1;
+    while (l <= r) {
+        int mid = l + (r - l) / 2;
+        if (nums[mid] == target) return mid;
+        if (nums[mid] < target) l = mid + 1;
+        else r = mid - 1;
+    }
+    return -1;
+}
+
+✅ 2️⃣0️⃣ Search in Rotated Sorted Array
+public int search(int[] nums, int target) {
+    int l = 0, r = nums.length - 1;
+    while (l <= r) {
+        int mid = l + (r - l) / 2;
+        if (nums[mid] == target) return mid;
+
+        if (nums[l] <= nums[mid]) {
+            if (target >= nums[l] && target < nums[mid]) r = mid - 1;
+            else l = mid + 1;
+        } else {
+            if (target > nums[mid] && target <= nums[r]) l = mid + 1;
+            else r = mid - 1;
+        }
+    }
+    return -1;
+}

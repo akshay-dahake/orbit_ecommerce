@@ -1,0 +1,836 @@
+*
+What is a Marker Interface?
+
+A marker interface in Java is an interface that has no methods or fields.
+Its purpose is to “mark” or “tag” a class as having some property, so that certain behavior can be applied to it at runtime by the Java API or framework.
+
+
+public class MyClass implements Serializable {
+}
+
+Serializable is a marker interface. It has no methods, but by implementing it, you’re telling Java:
+“This object is allowed to be serialized.”
+
+Key points:
+
+No methods — empty interface
+Used for metadata or type information
+Runtime behavior is usually handled by Java libraries, not by the interface itself
+Often used in legacy Java APIs
+
+*
+What do you think Java uses: pass by value or pass by reference?
+
+Ah, this is a classic Java interview question — but many people get it wrong because of the way objects work in Java. Let’s go step by step.
+
+1️⃣ The short answer
+Java is always pass-by-value.
+Even when you pass an object, what is passed is the value of the reference, not the object itself.
+
+2️⃣ What that means
+For primitives (int, double, boolean, etc.)
+The actual value is copied into the method parameter.
+Changes to the parameter do not affect the original variable.
+
+void increment(int x) {
+    x = x + 1;
+}
+
+int a = 5;
+increment(a);
+System.out.println(a); // 5, NOT 6
+
+
+✅ This is classic pass-by-value.
+For objects
+The value of the reference is copied.
+Both the original and the method parameter point to the same object.
+
+But the reference itself is a copy — reassigning it doesn’t change the original reference.
+
+class Person {
+    String name;
+}
+
+void changeName(Person p) {
+    p.name = "Alice";       // modifies the object → affects original
+    p = new Person();       // reassigns local copy of reference → no effect outside
+    p.name = "Bob";
+}
+
+Person person = new Person();
+person.name = "John";
+changeName(person);
+System.out.println(person.name); // Alice
+
+
+Explanation:
+
+p.name = "Alice" → changes the actual object → visible outside
+p = new Person() → only reassigns the local reference → no effect outside
+p.name = "Bob" → changes the new object → not visible outsid
+
+3️⃣ Why people think it’s pass-by-reference
+Because objects can be modified inside methods, it looks like references are passed by reference.
+But the reference itself is passed by value.
+
+
+*
+1️⃣ What are Inner Classes in Java?
+
+An inner class is a class defined inside another class.
+class Outer {
+    class Inner {
+    }
+}
+
+
+Java allows this to:
+Group logically related classes
+Increase encapsulation
+Write cleaner, more maintainable code
+
+2️⃣ Key statement explained (important)
+
+“Inner classes have access to the attributes and methods of the outer class, even if they are declared private.”
+
+Why is this possible
+Because:
+
+Inner classes are part of the same top-level class
+Java compiler allows direct access to all members of the outer class
+This applies even to private fields and methods
+
+Example (private access)
+class BankAccount {
+
+    private double balance = 1000;
+
+    private void showBalance() {
+        System.out.println(balance);
+    }
+
+    class Auditor {
+        public void audit() {
+            // Accessing private field
+            System.out.println("Balance: " + balance);
+
+            // Accessing private method
+            showBalance();
+        }
+    }
+}
+
+Usage
+BankAccount account = new BankAccount();
+BankAccount.Auditor auditor = account.new Auditor();
+auditor.audit();
+
+
+✔ Auditor accesses private balance
+✔ Auditor calls private showBalance()
+
+3️⃣ Types of Inner / Nested Classes in Java
+
+Java has 4 types of nested classes.
+
+1️⃣ Non-static nested class (Inner Class)
+Definition
+
+Declared inside a class
+Not static
+Requires an instance of the outer class
+
+Example
+class Outer {
+
+    private String message = "Hello";
+
+    class Inner {
+        void print() {
+            System.out.println(message);
+        }
+    }
+}
+
+Key points
+
+✔ Can access all outer class members
+✔ Needs outer object
+✔ Commonly used when inner class is tightly coupled to outer class
+
+2️⃣ Static Nested Class
+Definition
+
+Declared with static
+Does NOT need an outer class instance
+Can only access static members of outer class directly
+
+Example
+class Outer {
+
+    static int count = 10;
+    int data = 20;
+
+    static class StaticNested {
+        void display() {
+            System.out.println(count);   // OK
+            // System.out.println(data); // ❌ Not allowed
+        }
+    }
+}
+
+Usage
+Outer.StaticNested obj = new Outer.StaticNested();
+obj.display();
+
+Key points
+
+✔ No outer object required
+✔ Cannot access non-static members directly
+✔ Used like a normal class but namespaced inside outer class
+
+3️⃣ Local Inner Class (inside a method)
+Definition
+
+Defined inside a method
+Scope limited to that method
+Can access final or effectively final local variables
+
+Example
+class Outer {
+
+    void display() {
+        int x = 10; // effectively final
+
+        class LocalInner {
+            void show() {
+                System.out.println(x);
+            }
+        }
+
+        LocalInner li = new LocalInner();
+        li.show();
+    }
+}
+
+Key points
+
+✔ Exists only inside method
+✔ Good for helper logic
+✔ Cannot have access modifiers
+
+4️⃣ Anonymous Inner Class
+Definition
+
+Inner class without a name
+
+Used for one-time use
+
+Often used with interfaces or abstract classes
+
+Example (interface)
+interface Greeting {
+    void sayHello();
+}
+
+class Outer {
+    void greet() {
+        Greeting g = new Greeting() {
+            public void sayHello() {
+                System.out.println("Hello from anonymous class");
+            }
+        };
+        g.sayHello();
+    }
+}
+
+Key points
+
+✔ No class name
+✔ Used once
+✔ Shorter code
+
+(Modern Java often replaces this with lambda expressions)
+
+4️⃣ Comparison table (quick revision)
+Type	          Needs outer instance	     Access to outer members	    Typical use
+Inner (non-static)	✅ Yes	               All (including private)	   Tight coupling
+Static nested	        ❌ No	                   Only static	           Utility/helper
+Local class	        ✅ Yes	               All + final locals	Method-specific logic
+Anonymous	        ✅ Yes	                    All	                One-time behavior
+
+
+5️⃣ Why inner classes can access private members (exam-ready)
+
+Exam / interview answer:
+Inner classes are compiled as part of the same top-level class, so the Java compiler allows them to access all members of the outer class, including private ones.
+
+6️⃣ Real-world usage
+Event handling (GUI)
+Callbacks
+Helper classes
+Encapsulating logic close to where it’s used
+
+
+
+*
+How do you access a package-private class from another package?
+
+
+Package-private classes are only visible inside their own package. To access them from another package,
+you must either make the class public, provide a public factory method that returns an interface or public superclass, or use a public subclass.”
+ 
+ option 1 Make the class public
+ 
+ option 2
+ Use inheritance (public subclass)
+// package com.example.alpha
+class Base {
+    void show() { System.out.println("Hello"); }
+}
+
+public class Derived extends Base {
+    public void showPublic() { super.show(); }
+}
+
+Then in another package:
+
+import com.example.alpha.Derived;
+Derived obj = new Derived();
+obj.showPublic(); // works
+
+The package-private base class itself is hidden, but you can expose behavior via a public subclass.
+
+
+*
+Can you modify a final object reference in Java?
+
+A final object reference cannot be reassigned to another object, but the contents of the object can be modified if the object is mutable.”
+
+final ClassName obj = new ClassName();
+
+    The reference obj cannot point to another object
+    But the object itself can still be modified (unless the object is immutable)
+    Important: final applies to the reference, not the contents of the object.
+    
+    
+Example 1: Modifying object fields
+class Person {
+    String name;
+    public Person(String name) { this.name = name; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        final Person p = new Person("Alice");
+
+        p.name = "Bob";  // ✅ Allowed! Object state can change
+        System.out.println(p.name); // Bob
+
+        // p = new Person("Charlie"); // ❌ Compilation error! Cannot reassign final reference
+    }
+}
+
+
+Example 2-Using a final collection
+import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        final List<String> names = new ArrayList<>();
+        names.add("Alice");   // ✅ Allowed
+        names.add("Bob");     // ✅ Allowed
+        System.out.println(names);
+
+        // names = new ArrayList<>(); // ❌ Compilation error
+    }
+}
+
+
+*
+diff between map and flatmap in stream api
+
+“map() transforms each element into another element, resulting in a one-to-one mapping.
+ flatMap() is used when each element produces a stream or collection, and it flattens those multiple streams into a single stream.”
+
+ex->
+using map 
+List<String> names = List.of("java", "spring");
+
+names.stream()
+     .map(String::toUpperCase)
+     .forEach(System.out::println);
+
+
+
+
+using 
+
+
+List<String> words = List.of("hi", "bye");
+
+words.stream()
+     .map(w -> w.split(""))
+     .forEach(System.out::println);
+
+Result:
+["h","i"]
+["b","y","e"]
+
+words.stream()
+     .flatMap(w -> Arrays.stream(w.split("")))
+     .forEach(System.out::println);
+
+Result:
+
+h i b y e
+
+
+*
+How do imports affect compilation and class loading?
+
+1️⃣ What an import statement really does
+
+Imports are ONLY for the compiler, not for the JVM at runtime.
+import tells the compiler where to find a class by simple name
+It does not load classes
+It does not increase runtime overhead
+
+import java.util.List;
+
+This allows you to write:
+List list = new ArrayList();
+
+
+Instead of:
+java.util.List list = new java.util.ArrayList();
+
+2️⃣ Effect of imports during COMPILATION
+Without import
+java.util.List list = new java.util.ArrayList();
+
+With import
+import java.util.List;
+import java.util.ArrayList;
+
+List list = new ArrayList();
+
+What the compiler does
+
+Resolves List → java.util.LisT
+Resolves ArrayList → java.util.ArrayList
+
+Writes fully qualified names into bytecode
+
+📌 Bytecode contains fully qualified class names, not imports.
+
+3️⃣ What happens if imports are wrong or missing?
+❌ Missing import
+List list = new ArrayList();
+
+
+Compile-time error:
+
+cannot find symbol: class List
+
+❌ Conflicting imports
+import java.util.Date;
+import java.sql.Date;
+
+
+Compile-time error:
+
+reference to Date is ambiguous
+
+
+✔ Solution:
+
+java.util.Date d = new java.util.Date();
+
+4️⃣ Effect of imports during CLASS LOADING (Runtime)
+Imports have ZERO effect on class loading.
+
+At runtime:
+JVM loads classes only when needed
+
+Based on:
+Fully qualified class name
+Classpath / module path
+
+Example:
+
+List list = new ArrayList();
+
+At runtime, JVM loads:
+java.util.List
+java.util.ArrayList
+
+👉 Whether you imported them or used full names does not matter.
+
+5️⃣ Does importing a class load it into memory?
+❌ NO
+
+import java.util.HashMap;
+
+HashMap is NOT loaded until it’s actually used
+
+Class loading happens when:
+Object is created (new)
+Static method/field is accessed
+Class is referenced reflectively
+
+6️⃣ Wildcard imports (*) – compilation vs runtime
+import java.util.*;
+
+Compilation
+Compiler searches java.util package for needed classes
+Slightly slower compilation (negligible)
+
+Runtime
+
+No difference at all
+JVM does not load all classes in the package
+
+📌 Myth: import java.util.* loads all classes
+❌ False
+
+7️⃣ Key interview myths (CLEAR THEM)
+Myth	Truth
+Import loads class	❌ No
+Wildcard imports load all classes	❌ No
+Imports affect performance	❌ No
+Imports are stored in bytecode	❌ No
+8️⃣ Interview-ready answer (perfect)
+
+“Imports are a compile-time convenience that help the compiler resolve class names. 
+They do not affect class loading or runtime behavior. At runtime, the JVM loads classes based on fully qualified names when they are first used.”
+
+9️⃣ One-line summary
+
+Imports help the compiler; class loading is handled independently by the JVM at runtime.
+
+*
+
+DIFF between import and static import 
+
+“import is used to import classes or interfaces so they can be referred to by simple names.
+static import is used to import static fields or methods so they can be used without qualifying them with the class name.”
+
+ex of static import 
+import static java.lang.Math.PI;
+import static java.lang.Math.sqrt;
+
+public class Test {
+    double area(double r) {
+        return PI * sqrt(r);
+    }
+}
+
+
+Without static import:
+return Math.PI * Math.sqrt(r);
+
+
+*
+How to choose initial capacity in an ArrayList constructor in a scenario where the list is repeatedly cleared and reused
+
+“When an ArrayList is repeatedly cleared and reused, it’s best to choose the initial capacity slightly larger than 
+the expected maximum number of elements. This avoids repeated resizing of the internal array, which is expensive. 
+Clearing the list does not shrink the array, so subsequent additions reuse the allocated space efficiently.”
+
+8️⃣ One-Line Summary
+
+Pick initial capacity ≥ expected max size to minimize resizing; clear() keeps the backing array for reuse.
+
+
+
+*
+ Scenario-Based: Suppose you're storing user session data in a HashMap. How would you ensure thread safety
+ 
+ You are storing user session data in a HashMap.
+
+⚠️ Issue:
+
+HashMap is NOT thread-safe
+concurrent access can cause:
+Data inconsistency
+Lost updates
+Infinite loops (rehashing issue in older Java)
+
+Ways to Ensure Thread Safety (From BAD → BEST)
+1️⃣ Synchronize the HashMap (Basic, but not ideal)
+Map<String, Session> sessions =
+        Collections.synchronizedMap(new HashMap<>());
+
+How it works
+Every operation is synchronized on a single lock
+
+Pros
+✔ Simple
+✔ Thread-safe
+
+Cons
+
+❌ Poor performance
+❌ Single lock blocks all threads
+
+2️⃣ Use ConcurrentHashMap (BEST & RECOMMENDED)
+Map<String, Session> sessions = new ConcurrentHashMap<>();
+
+Why this is best
+Thread-safe by design
+Allows high concurrency
+No global lock
+
+How it works internally
+
+Java 8+ uses:
+CAS (Compare-And-Swap)
+Fine-grained locking
+Bucket-level synchronization
+
+Example (safe updates)
+sessions.put(sessionId, session);
+
+sessions.compute(sessionId, (k, v) -> updateSession(v));
+
+Pros
+
+✔ High performance
+✔ Scales well
+✔ Industry standard
+
+Cons
+
+❌ Slightly more complex internals
+
+
+3.Immutable Session Objects (IMPORTANT ADD-ON)
+
+Even with ConcurrentHashMap, mutable session objects can cause issues.
+
+Best practice
+final class Session {
+    private final String userId;
+    private final long createdAt;
+}
+
+Why?
+
+Prevents race conditions inside values
+
+Thread safety is easier
+
+4.Atomic Operations 
+sessions.computeIfAbsent(id, k -> new Session());
+
+
+What I would say in an interview (PERFECT ANSWER)
+
+“Since HashMap is not thread-safe, I would use ConcurrentHashMap to store session data.
+ It provides thread safety with high concurrency using fine-grained locking and CAS. 
+ I’d also make session objects immutable and use atomic operations like computeIfAbsent to avoid race conditions.”
+
+One-line interview summary
+
+Use ConcurrentHashMap, atomic operations, and immutable values to ensure thread safety for session storage.
+
+🔹 BONUS: When NOT to use ConcurrentHashMap
+
+When strict ordering is required
+
+When all operations must be atomic together
+→ Use explicit locking
+
+
+*
+Suppose you have multiple interfaces with default methods that a class implements. How would you resolve method conflicts?
+
+Why does a conflict occur?
+
+Java allows interfaces to have default methods (Java 8+).
+
+If a class implements multiple interfaces that define the same default method, the compiler cannot decide which one to use.
+
+👉 This causes the “diamond problem”.
+
+2️⃣ Example of the conflict ❌
+interface A {
+    default void show() {
+        System.out.println("A show");
+    }
+}
+
+interface B {
+    default void show() {
+        System.out.println("B show");
+    }
+}
+
+class Test implements A, B {
+}
+
+Compile-time error
+class Test inherits unrelated defaults for show() from types A and B
+
+3️⃣ How to Resolve the Conflict (ONLY WAY) ✅
+🔹 Override the method in the implementing class
+class Test implements A, B {
+
+    @Override
+    public void show() {
+        System.out.println("Resolved in Test");
+    }
+}
+
+📌 The class must provide its own implementation.
+
+4️⃣ Calling a Specific Interface’s Default Method
+
+You can still reuse a specific interface’s implementation:
+
+class Test implements A, B {
+
+    @Override
+    public void show() {
+        A.super.show();  // calls A's default method
+        B.super.show();  // calls B's default method
+    }
+}
+
+Output
+A show
+B show
+
+5️⃣ Rule Priority (VERY IMPORTANT – Interview Favorite)
+Java follows this priority:
+
+🥇 Class > Interface
+class Parent {
+    public void show() {
+        System.out.println("Parent");
+    }
+}
+
+interface A {
+    default void show() {
+        System.out.println("A");
+    }
+}
+
+class Child extends Parent implements A {
+}
+
+Output
+  --Parent
+
+👉 Class method wins over interface default method
+
+6️⃣ What if only ONE interface has default method?
+interface A {
+    default void show() {}
+}
+
+interface B {
+    void show();
+}
+
+class Test implements A, B {
+    public void show() {} // must implement
+}
+
+📌 Abstract method overrides default method.
+
+7️⃣ Interview-Ready Answer (Perfect)
+
+“If a class implements multiple interfaces that define the same default method, the class must override the method to resolve the conflict. 
+Inside the overriding method, it can explicitly call a specific interface’s default implementation using InterfaceName.super.method() if needed. 
+Also, class methods always take precedence over interface default methods.”
+
+
+*
+
+How do JVM optimizations affect the performance of Java applications?
+
+JVM optimizations like JIT compilation, method inlining, escape analysis, and GC tuning significantly 
+improve Java performance by converting hot bytecode into optimized native code and reducing memory 
+and synchronization overhead. These optimizations happen at runtime, allowing the JVM to adapt based 
+on actual execution patterns, though they introduce warm-up time.”\
+
+
+*
+What is sealed class 
+
+A sealed class (introduced in Java 15 as preview, finalized in Java 17) is a class or interface that restricts
+ which other classes can extend or implement it.
+ 
+ 
+ public sealed class Shape
+        permits Circle, Rectangle, Triangle {
+}
+
+every permitted subclass must be one of these:
+
+1️⃣ final
+public final class Circle extends Shape {
+}
+
+2️⃣ sealed
+public sealed class Rectangle extends Shape
+        permits Square {
+}
+
+3️⃣ non-sealed
+public non-sealed class Triangle extends Shape {
+}
+
+*
+record class in java
+
+A record in Java is a special kind of class (introduced in Java 16) designed to store immutable data with almost zero boilerplate.
+Records automatically generate common methods like equals(), hashCode(),
+and toString(), making them ideal for simple data models or data transfer objects(DTO).
+
+Before records, for a simple data carrier you had to write:
+fields
+constructor
+getters
+equals()
+hashCode()
+toString()
+
+Records generate all of this automatically.
+
+Basic syntax
+
+public record Person(String name, int age) {
+}
+
+That’s it.
+
+The compiler automatically creates:
+private final fields
+canonical constructor
+getters (name(), age())
+equals(), hashCode(), toString()
+
+
+Key characteristics (VERY important for interviews)
+🔹 Immutable by default
+Fields are final
+No setters
+Thread-safe by design
+
+🔹 Records extend java.lang.Record
+Cannot extend other classes
+Can implement interfaces
+
+
+
+*
+What is Metaspace in Java, and how does it differ from PermGen?
+Metaspace, introduced in Java 8, replaces the older PermGen (Permanent Generation). Unlike
+PermGen, Metaspace dynamically grows based on the application's needs, making it less prone to
+OutOfMemoryError. PermGen had a fixed maximum size, storing class metadata and causing issues
+with classloading. 

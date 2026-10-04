@@ -1,0 +1,361 @@
+1.two sums
+
+class Solution{
+
+	public int[] two sums(int[] nums, int target){
+	
+		Map<Integer, Integer> map = new HashMap<>();
+		
+		for(int i = 0 , i < nums.length , i++){
+		int complement = target - nums[i];
+		
+			if(map.contains(complement)){
+				return new int[] = {map.get(complement) , i};
+			}
+			else{
+				map.put(num[i] , i);
+			}
+				
+		}
+		throws new IllegalException("not found")
+	}
+}
+
+
+
+
+2.palindrome no
+
+class Solution {
+    public boolean isPalindrome(int x) {
+      String num = String.valueof(x);
+      String reversed = new StringBuilder(num).reversed().tostring();
+      return num.equals(reversed);
+    }
+}
+
+
+3. merge sorted array leetcode 88
+
+
+public class MergeSorted {
+
+	public static void main(String[] args){
+	
+	int nums1[] = {1,2,3,0,0,0};
+	int nums2[] = {2,5,6};
+
+	int m = 3 ;  // no of elements in 1st array  0 is not considered here
+	int n = 3 ; // no of elements in 2nd array
+	
+	
+	MergeSorted sol = new MergeSorted();
+        sol.mergeArray(nums1, 3, nums2, 3);
+
+        System.out.println(Arrays.toString(nums1));
+	
+	
+	}
+
+
+	public void mergeArray(nums1,nums2,m,n){
+	
+	int i = m-1;  //last element of 1st array     value is 3 here 
+	int j = n-1;    // value is 6
+	int k = m+n-1 ;
+	
+	
+	while(i>=0 && j >=0){
+	
+	if(nums1[i] > nums2[j]){
+		nums1[k] = nums1[i];
+		k--;
+		i--;
+	
+	}else{
+		nums1[k] = nums2[j];
+		k--;
+		j--;
+	}
+	
+	
+	}
+	
+	}
+
+}
+
+o/p    = {1,2,2,3,5,6}
+
+
+4.remove element
+
+public class RemoveElement {
+
+
+	public static void main(String[] args){
+	
+	int [] nums = {3,2,2,3};
+	unt val = 3 
+	 
+	 removeElement(nums,val);
+	
+	}
+
+	static int removeElement(int[] nums, int val){
+		int count = 0;
+		for(int i = 0 ; i < nums.length ; i++){
+		
+			if(nums[i] != val){
+				nums[count] = nums[i];
+				count++;
+			
+			}
+		
+		}
+	
+		return count;
+	}
+}
+
+
+o/p = 2  as 3,3 removes from array and only 2,2 remains so that count is 2;
+
+
+5. remove duplicate from sorted array and give count how much element remain in array
+
+static int removeDuplicate(int [] nums){
+
+int count = 0;	
+	
+	for(int i = 0 ; i<nums.length; i++){
+		if(i< nums.length - 1 && nums[i] == nums[i+1]){      // i< nums.length-1 because we need to check till 2nd last element only Prevents out-of-bounds error
+			continue;     // it will ignore the duplicate element
+		}else{
+		
+			nums[count] = nums[i];
+			count++;
+		}
+	
+	}
+	return count;
+}
+
+
+
+6. majority element
+
+class Solution {
+    public int majorityElement(int[] nums) {
+        int count = 0;
+        int candidate = 0;
+
+        for (int num : nums) {
+            if (count == 0) {
+                candidate = num;
+            }
+
+            if (num == candidate) {
+                count++;
+            } else {
+                count--;
+            }
+        }
+
+        return candidate;
+    }
+}
+
+
+
+7.rotate array 
+
+class Solution {
+    public void rotate(int[] nums, int k) {
+        int n = nums.length;
+        
+        // Step 1: Reverse the entire array
+        reverse(nums, 0, n - 1);
+        // Step 2: Reverse the first k elements
+        reverse(nums, 0, k - 1);
+        // Step 3: Reverse the remaining elements
+        reverse(nums, k, n - 1);
+    }
+
+    private void reverse(int[] nums, int start, int end) {
+        while (start < end) {
+            int temp = nums[start];
+            nums[start] = nums[end];
+            nums[end] = temp;
+            start++;
+            end--;
+        }
+    }
+}
+
+
+explanation - {1,2,3,4,5,6,7}   ,  k = 3  for 
+
+step 1 . reverse it 
+{7,6,5,4,3,2,1}
+
+step 2 reverse 1st part k-1   3-1 = 2 means till 2nd index
+{5,6,7,4,3,2,1}
+
+step 3 reverse remaining  from k to n-1  means reverse from 4 
+{5,6,7,1,2,3,4}
+
+
+
+8.plus one 
+class Solution {
+    public int[] plusOne(int[] digits) {
+
+        for (int i = digits.length - 1; i >= 0; i--) {
+
+            if (digits[i] < 9) {
+                digits[i]++;
+                return digits;
+            }
+
+            digits[i] = 0;
+        }
+
+        // if all digits were 9
+        int[] result = new int[digits.length + 1];
+        result[0] = 1;
+        return result;
+    }
+}
+
+
+9. reverese integer
+
+public class ReverseInteger {
+
+    public static int reverse(int x) {
+        int rev = 0;
+
+        while (x != 0) {
+            int digit = x % 10;
+            if(rev > Interger.MAX_VALUE / 10  || rev < MIN_VALUE / 10){
+            	return 0;
+            }
+            rev = (rev * 10) + digit;
+            x = x/10;         
+    }
+    return rev;
+}
+
+
+    public static void main(String[] args) {
+        System.out.println(reverse(123));        // 321
+        System.out.println(reverse(-123));       // -321
+        System.out.println(reverse(120));        // 21
+        System.out.println(reverse(1534236469)); // 0 (overflow)
+    }
+}
+
+
+10. find 1st and last position of element in sorted array
+
+public class Element{
+
+
+
+	public static void main(String[] args){
+	
+		int [] nums = {5,7,7,8,8,10};
+		int target =  8 ;
+		
+		System.out.println(searchRange(nums,target));
+	
+	}
+
+
+	static int [] searchRange(int [] nums , int target){
+	
+		int [] arr  = new int[2];
+		arr[0] = -1;
+		arr[1] = -1;
+		
+		for (int i = 0 ; i < nums.length ; i++){
+			if(nums[i] == target){
+				arr[0] = i;
+				while(i < nums.length && num[i+1]  == target){
+				 i++;
+				arr[1] = i;
+				break;
+				}			
+			}		
+		}
+		return arr;	
+	} 
+}
+
+o/p = {3,4}   // as targer 8 is found at 3rd and 4th index so 1st and last position
+
+
+
+*
+diffeence between two arrays
+ ex ; i/p = {1,2,3}  , {2,4,6}
+o/o - [{1,3}, {4,6}]
+
+
+
+
+public class Diff{
+
+public List<List<Integer>> findDiff(int [] nums1, int [] nums2){
+
+		Set<Integer> set1 = new HashSet<>();
+		Set<Integer> set2 = new HashSet<>();
+		
+		for(int x : nums1){
+			set1.add(x);
+		}
+
+		for(int y : nums2){
+			set2.add(y);
+		}
+		
+		
+		Set<Integer> diff1 = new HashSet<>(set1);
+		Set<Integer> diff2 = new HashSet<>(set2);
+		
+		diff1.removeAll(set2);
+		diff2.removeAll(set1);
+		
+		return List.of(new ArrayList<>(diff1), new ArrayList<>(diff2) );
+		
+	}
+
+}
+
+
+* 
+longest substring of non repeating character
+ i/p = abcabcbb;
+ o/p - 3
+
+
+public int lengthSubstring(String s){
+
+
+
+
+
+
+
+}
+
+
+
+longest common subsequence
+
+
+
+
+
+

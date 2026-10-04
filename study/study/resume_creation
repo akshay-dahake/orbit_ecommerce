@@ -1,0 +1,90 @@
+# Akshay Dahake
+
+**Software Developer (Backend – Java / Spring Boot)**
+
+Mumbai, Maharashtra | India | LinkedIn | Email | Phone
+
+---
+
+## PROFESSIONAL SUMMARY
+
+Backend-focused **Software Developer with 3+ years of professional experience** in designing, developing, and maintaining **scalable Java-based applications**. Strong expertise in **Java, Spring Boot, RESTful APIs, PostgreSQL**, and backend dashboard development. Experienced in implementing **JWT-based security**, building **data synchronization schedulers using CSV**, and working with **Redis** for caching and session handling. Possess **working knowledge of React.js** for API integration and form-based UI development. Comfortable working in **Agile environments**, with a strong focus on clean code, performance, and reliability.
+
+---
+
+## WORK EXPERIENCE
+
+### CDAC, Mumbai, Maharashtra
+
+**Project Engineer**
+*Aug 2022 – Present*
+
+* Designed and developed **RESTful APIs using Java and Spring Boot** for multiple modules, ensuring scalability, security, and performance.
+* Worked extensively on **registration and questionnaire modules** for school students and teachers, implementing robust **data validation and business logic**.
+* Developed **dashboard-related backend functionalities**, handling complex data aggregation and API responses for frontend consumption.
+* Implemented **JWT-based authentication and authorization** using Spring Security.
+* Built and maintained **scheduled jobs** to synchronize large volumes of data between **school servers and central servers** using **CSV-based data transfer**, **PostgreSQL COPY**, and **WebClient**.
+* Used **PostgreSQL** as the primary database, optimizing queries and ensuring efficient data storage and retrieval.
+* Leveraged **Redis** for caching and session-related use cases to improve application performance.
+* Actively identified and fixed bugs, ensuring a **stable and high-quality production environment**.
+* Collaborated with cross-functional teams following **Agile/Scrum methodologies**.
+* Used **Git** for version control and **Postman** for API testing and debugging.
+
+---
+
+## PROJECTS
+
+### SAFAL
+
+**Technologies:** Java, Spring Boot, PostgreSQL, React.js, Git
+
+* Worked on the **Questionnaire module** for school students and teachers, implementing backend logic and APIs.
+* Developed and validated **Registration module** APIs to ensure accurate and secure data submission.
+* Built scalable and efficient backend services using **Java and Spring Boot**, supporting smooth frontend integration.
+* Fixed application defects and optimized existing functionalities to deliver a **seamless user experience**.
+* Collaborated with frontend developers by supporting **API integration in React.js**.
+
+---
+
+### JAM
+
+**Technologies:** Java, Spring Boot, PostgreSQL, React.js, Git
+
+* Contributed to the **Registration module**, implementing backend APIs and validation logic.
+* Worked on **defect resolution (Reactification)** to improve UI behavior and system stability.
+* Integrated **online payment gateways** including **SBI** and **CC Avenue**, handling backend API workflows and validations.
+* Developed and integrated **React-based forms** with backend services for end-to-end feature delivery.
+* Used Git for source control and collaborated closely with team members during development and testing.
+
+---
+
+## SKILLS
+
+**Backend Technologies:**
+Java (Core Java, Java 8, Streams, Collections), Spring Boot, Spring Security, REST APIs, JWT Authentication, JPA, Hibernate, JDBC
+
+**Database & Caching:**
+PostgreSQL, MySQL, Redis, pgAdmin, MySQL Workbench
+
+**Frontend (Working Knowledge):**
+React.js, JavaScript, HTML, CSS
+
+**Tools & Platforms:**
+Git, Postman, Linux, STS, Eclipse
+
+**Concepts & Practices:**
+Agile/Scrum, Backend Dashboard Development, Scheduled Jobs, CSV-based Data Sync, Microservices (conceptual knowledge), AWS (basic knowledge)
+
+---
+
+## EDUCATION
+
+**CDAC, Mumbai**
+Post Graduate Program / Training (Project Engineer Role)
+
+*(Add your degree, college name, and year here if you want it listed explicitly)*
+
+---
+
+*References available on request*
+

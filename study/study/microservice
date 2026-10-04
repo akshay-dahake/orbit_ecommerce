@@ -1,0 +1,101 @@
+Core Microservices Concepts
+
+Q1. What is the difference between monolithic and microservices architecture?
+
+A monolithic application has all business logic — user management, orders, notifications — compiled and deployed as a single unit. 
+If the notification module has a bug, you redeploy the entire application. In our project, each concern is a separate deployable Spring Boot application.
+ User Service, Order Service, and Notification Service are independently deployable, independently scalable, and independently maintainable. 
+If Notification Service crashes, orders can still be placed because it has zero runtime dependency on Order Service — it only consumes Kafka events asynchronously.
+The trade-off is operational complexity. In a monolith you have one database, one log file, one deployment. 
+In microservices you have distributed tracing (Zipkin), a service registry (Eureka), a message broker (Kafka), 
+and multiple databases — all of which you saw in this project.
+
+
+
+
+Q2. How did you handle inter-service communication in your project and when did you choose synchronous vs asynchronous?
+We used both patterns deliberately based on the business requirement.
+Synchronous REST via WebClient was used in Order Service when calling User Service to validate a user exists before placing an order. 
+This is synchronous because the result of that call directly affects whether the order proceeds. We cannot place the order without knowing the user exists — so we must wait for the answer.Asynchronous Kafka was used when Order Service notifies about a placed order. The notification is a side effect — 
+the order is already saved and confirmed. The client does not need to wait for the email to be sent. If Notification Service is down,
+ the order is not affected — Kafka retains the message and delivers it when the service recovers. This decouples two services that have no need
+to know about each other at runtime.
+The decision rule is simple — if the caller needs the result to continue, use synchronous. 
+If it is a side effect that can happen independently, use asynchronous.
+
+
+
+
+Q3. What is Service Discovery and why is it needed?
+In a traditional application you hardcode the IP and port of dependencies. In microservices, services can run on any port, scale to multiple instances, or restart with a new IP at any time. Hardcoding breaks immediately.
+Eureka Server solves this. Every service registers itself on startup with its name, host, and port. When Order Service needs to call User Service, it asks Eureka for the current address of user-service instead of using a hardcoded IP. The @LoadBalanced annotation on WebClient.Builder and lb://user-service in Gateway properties both trigger this Eureka lookup automatically.
+In our project, if you start two instances of User Service on ports 8081 and 8084, Eureka registers both. The load balancer automatically distributes requests between them using Round Robin. Neither Gateway nor Order Service knows or cares that two instances exist.
+
+Q4. Explain the Circuit Breaker pattern and how you implemented it.
+A circuit breaker prevents cascading failures. When User Service goes down, without a circuit breaker, Order Service would keep making network calls that all timeout after several seconds. Under high traffic this exhausts thread pools and connection pools, crashing Order Service too even though it was perfectly healthy. This is called a cascading failure.
+The circuit breaker has three states. CLOSED means everything is normal, calls go through. OPEN means too many failures occurred, calls are immediately rejected without attempting the network call — the fallback runs instantly. HALF-OPEN means after the configured wait period, a few test calls are allowed through to see if the service recovered.
+In our project we placed @CircuitBreaker on checkUserExists() in UserServiceClient.java — a separate component, not inside OrderService itself. This was critical because Spring AOP proxies only intercept calls between different beans. If @CircuitBreaker stays on a private method called within the same class, the proxy is bypassed and the annotation does nothing. Moving it to a separate @Component was the key fix that made it work.
+CLOSED → 3 failures → OPEN → wait 10s → HALF-OPEN → success → CLOSED
+
+Q5. What is the difference between Circuit Breaker at Gateway level vs Service level?
+Gateway level circuit breaker protects external clients. If User Service is down and a browser calls /api/users/1, the gateway returns a clean JSON fallback instead of a raw 503. This is about client experience.
+Service level circuit breaker protects internal service-to-service calls. When Order Service calls User Service internally via WebClient, that call never goes through the gateway. So if only a gateway CB exists, Order Service still hangs waiting for User Service with no protection. Service level CB prevents Order Service from cascading into failure when its dependency is down.
+In a production system you need both — gateway CB for external client protection and service CB for internal cascade protection. In our project we implemented both for exactly this reason.
+
+Q6. What is the Retry pattern and how does it work with Circuit Breaker?
+Retry automatically re-attempts a failed operation before giving up. In our project, @Retry on checkUserExists() retries the WebClient call up to 3 times with a 1 second gap. This handles transient failures — brief network blips, a service that is momentarily overloaded but recovers in milliseconds.
+The interaction with Circuit Breaker matters. Retry runs first, inside the circuit breaker. So one logical call from the caller's perspective is actually 3 network attempts. The circuit breaker counts the final outcome as one failure. After enough final failures, the circuit opens and retry stops running entirely — there is no point retrying if the circuit is open.
+The order of annotations matters too:
+java@CircuitBreaker(name = "userServiceInternal", fallbackMethod = "fallbackUserCheck")
+@Retry(name = "userServiceInternal")
+public boolean checkUserExists(Long userId) {
+@CircuitBreaker is outer, @Retry is inner. Retry wraps the actual call, Circuit Breaker wraps the retry.
+
+Q7. What is an API Gateway and what responsibilities does it have?
+An API Gateway is the single entry point for all external clients. In our project Spring Cloud Gateway runs on port 8080 and routes requests to the appropriate downstream service based on the URL path. /api/users/** goes to user-service and /api/orders/** goes to order-service.
+Beyond routing, a gateway handles cross-cutting concerns — authentication and authorization, rate limiting, request logging, SSL termination, and circuit breaking. These concerns apply to every service uniformly. Implementing them in every individual service would be duplication. The gateway handles them once.
+It also provides abstraction. Clients never know that user-service runs on port 8081 or that there are 3 instances of it. From a client's perspective there is one service at port 8080. The internal topology can change completely without any client changes.
+
+Q8. How does distributed tracing work and what problem does it solve?
+In a monolith, one log file contains the full picture of every request. In microservices, a single user request touches multiple services, each writing to its own log. If an order placement takes 3 seconds, you cannot tell from individual logs whether the slowness is in the gateway, order service, or user service.
+Zipkin solves this by assigning one traceId to every incoming request at the gateway. This ID is propagated in HTTP headers (X-B3-TraceId) to every downstream service call. Each service creates a span — a timed segment — and reports it to Zipkin with the same traceId. Zipkin assembles all spans into a waterfall view.
+In our project when you place an order, Zipkin shows one trace with spans from api-gateway, order-service, and user-service all linked by the same traceId. You can immediately see that user-service took 80ms and order-service took 200ms. Without this you would be grepping through 3 separate log files trying to correlate timestamps manually.
+
+Q9. What is the Saga pattern and why would you need it in this project?
+This is a pattern we did not implement but would be needed in production. Currently if Order Service saves the order to its database but then Kafka publish fails, the order exists in the database but no notification is ever sent. More critically, if we introduced a payment service and the payment fails after the order is saved, we have an inconsistent state — order saved but not paid.
+In a monolith this is solved with a database transaction that rolls back everything atomically. In microservices each service has its own database so a distributed transaction is not possible.
+The Saga pattern solves this using a sequence of local transactions, each publishing an event for the next step. If any step fails, compensating transactions are executed to undo previous steps. In our project the Saga would be: Place Order → Reserve Inventory → Process Payment → Send Notification. If Payment fails, a compensating event cancels the inventory reservation and marks the order as failed.
+There are two implementations — Choreography where each service reacts to events and decides its next action (what we have with Kafka), and Orchestration where a central saga orchestrator tells each service what to do. Choreography is simpler but harder to track. Orchestration is more complex but gives a clear picture of the overall flow.
+
+Q10. How would you handle the database per service pattern and what are the challenges?
+In our project each service has its own H2 database. User Service has no access to Order Service database and vice versa. This is the database per service pattern — it ensures loose coupling and allows each service to use the most appropriate database technology.
+The challenges are significant. Joins across services are impossible at the database level. If you want to show an order with full user details in one API response, you either call User Service from Order Service synchronously to fetch user data, maintain a denormalized copy of user data in Order Service, or use CQRS with a separate read model that combines data from multiple services.
+Data consistency is the hardest problem. In our project if a user is deleted from User Service, their orders still exist in Order Service database with a dangling userId. Handling this requires publishing a UserDeleted event that Order Service consumes to clean up or mark those orders. Without this, the services drift into inconsistent state over time.
+
+Q11. What are the advantages and disadvantages of using Kafka over REST for communication?
+Kafka advantages: services are fully decoupled — Order Service does not know Notification Service exists. Messages are persisted — if Notification Service is down for an hour, it processes all missed messages when it restarts, nothing is lost. Multiple consumers can independently consume the same message — if you add an Analytics Service later, it subscribes to order-events with no changes to Order Service. Kafka handles massive throughput and provides natural backpressure.
+Kafka disadvantages: eventual consistency — you cannot know synchronously whether the notification was sent. Debugging is harder — a message sitting unprocessed in a topic is invisible without tooling. Ordering guarantees are only within a partition, not globally. Schema changes to the event class require coordination between producer and consumer. Setting up and operating Kafka adds significant infrastructure complexity.
+In our project we used REST for the user validation call because we needed an immediate answer, and Kafka for notifications because the result does not affect the order response. This is the correct split.
+
+Q12. How would you secure this microservices project in production?
+Several layers are needed. At the gateway level, JWT token validation intercepts every request. The gateway verifies the token signature and expiration, extracts the user identity, and passes it downstream via headers. Individual services trust the gateway and do not re-validate tokens, avoiding repeated calls to an auth service.
+Service-to-service calls like Order Service calling User Service need mutual TLS or an internal token. Without this, any process inside the network can call any service directly, bypassing the gateway entirely.
+Kafka topics need ACL-based authorization so only Order Service can produce to order-events and only Notification Service can consume from it.
+Each service should run with the minimum database permissions it needs — Order Service has no SELECT rights on the users table because it has no access to that database at all.
+Secrets like database passwords and Kafka credentials must be externalized — never in application.properties committed to git. Spring Cloud Config Server or a vault solution like HashiCorp Vault handles this.
+
+Q13. How would you handle failures when Kafka is down in this project?
+Currently if Kafka is down, kafkaTemplate.send() in Order Service throws an exception. The order is already saved to the database at that point, so we have an order with no notification — an inconsistent state.
+The production solution is the Outbox Pattern. Instead of publishing directly to Kafka, Order Service writes the event to an outbox table in the same database transaction as the order save. A separate poller reads from the outbox table and publishes to Kafka, deleting the record on success. Since the order save and outbox write are in the same local transaction, they either both succeed or both fail. Kafka failure does not affect the order save, and the outbox retries until Kafka recovers.
+This guarantees at-least-once delivery — the notification will eventually be sent even if Kafka was down at the time the order was placed.
+
+Q14. What is the difference between @LoadBalanced WebClient and Feign Client?
+Both resolve service names via Eureka and load balance across instances. The difference is programming model and verbosity.
+Feign is a declarative HTTP client — you define an interface with annotations and Spring generates the implementation. It integrates with Resilience4J for circuit breaking and feels like calling a local method.
+WebClient is reactive and explicit — you write the HTTP call yourself using a fluent builder API. It is non-blocking, which suits reactive applications, and gives you fine-grained control over error handling as we saw with catching WebClientResponseException separately from connection failures.
+In our project we used WebClient because Order Service already had WebFlux on the classpath for the load balancer. In a traditional blocking Spring MVC service, Feign is usually simpler and the more common choice in production codebases.
+
+Q15. If you had to scale only Order Service to handle 10x traffic, how would you do it?
+Start a second instance of Order Service on a different port — say 8085. Both instances register with Eureka under the same name order-service. The Gateway load balances incoming requests between 8082 and 8085 automatically using Round Robin with no configuration changes.
+For Kafka, both instances belong to the same consumer group order-group. If the order-events topic has multiple partitions, Kafka assigns different partitions to each instance so they process messages in parallel without duplication.
+The H2 in-memory database is the immediate problem — each instance has its own separate in-memory database, so orders placed on instance 1 are invisible to instance 2. The fix is replacing H2 with a shared external database like PostgreSQL that both instances connect to. This is why H2 is only suitable for development and learning, never production.

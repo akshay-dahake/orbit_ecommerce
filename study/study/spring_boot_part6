@@ -1,0 +1,411 @@
+*
+how does your application interact with databases and which framework are you using
+-->
+we are using spring data JPA 
+
+1.use  @Entity on pojo class
+@Table for giving table name 
+@Id -> for primary and unique 
+@GeneratedValue(Strategy = GenerationType.IDENTITY) 
+@Column
+like this and so on......
+
+
+2.create interface and extend that to JpaRepository<class, Integer>
+
+3.application.properties -> define datasource properties and jpa specific properties
+
+like 
+spring.datasource.driver-class-name = 
+spring.datasource.url =
+spring.datasource.username = root
+spring.datasource.password = password
+
+JPA specific like
+spring.jpa.show-sql = true // to see the queries in console
+spring.jpa.hibernate.ddl-auto = upgrade   // if table is already created,update the table 
+
+
+*
+why it is imp to configure physical naming strategy
+-->
+suppose the class Employee have fields name, deptName , emailId , age and the class is annoted with the @Entity
+then on run it is saving the column name as name ,dept_name , email_id, age 
+
+it consider deptName as two diff words and save them with _ like dept_name 
+so if want to save it as is like deptName in table then we need to configure physical name 
+
+for that 
+in application.properties add 
+spring.jpa.hibernate.naming.physical-strategy = org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl 
+
+or use @Column() //not sure 
+
+*
+key benefits of using spring JPA
+ 
+--> 
+simplifies the devlopement of data access layer 
+reduce the boilerplate code
+it have built in crud operation related method like save() , findAll(), findById() and so on....
+
+Like above method findAll we can create our own custom method also like findBydeptName()
+List<Employee> findBydeptName(String deptName);
+
+
+*
+diff between hibernate, JPA and Spring data JPA
+-->
+JPA (Java Persistence API)
+What it is
+Specification (standard) defined by Java
+
+Describes rules + interfaces for ORM (Object-Relational Mapping)
+Does NOT contain implementation
+
+What it provides
+Annotations: @Entity, @Table, @Id, @Column
+Interfaces: EntityManager, Query
+Rules for mapping Java objects ↔ DB tables
+
+Key point
+JPA is just a contract, not a tool you can run.
+
+2️⃣ Hibernate
+What it is
+ORM framework
+Implementation of JPA
+Also provides extra features beyond JPA
+
+What it does
+Actually performs:
+SQL generation
+CRUD operations
+Caching
+Lazy loading
+Transactions
+
+Extra (Hibernate-specific) features
+@CreationTimestamp
+@UpdateTimestamp
+Second-level cache
+Custom naming strategies
+
+Key point
+Hibernate is the engine that follows JPA rules and adds more power.
+
+3️⃣ Spring Data JPA (Often called “Spring Boot JPA”)
+What it is
+Spring module built on top of JPA
+Uses Hibernate by default
+Focuses on reducing boilerplate code
+
+What it gives you
+JpaRepository, CrudRepository
+
+Auto-implemented methods:
+findById()
+save()
+deleteById()
+
+Query methods:
+findByDeptName(String name);
+
+What it hides
+No need to write:
+EntityManager
+Transactions manually
+Boilerplate CRUD code
+
+Key point
+Spring Data JPA is a productivity layer on top of JPA.
+
+
+*
+how can you connect multiple databases in single application
+-->
+need to define two diff datasource
+need to define entity and repository
+need to define entity manager
+need to define transaction manager
+
+for ex
+there is class employee and department make them entity by using @Entity
+make two repositories one for employee and one for dept class
+
+in application.properties file make two diff datasource 
+suppose 1st db is mysql  used for employee 
+spring.datasource.employee.driver-class-name =  mysql     // this is dummy name add correct
+spring.datasource.employee.url =
+spring.datasource.employee.username = root
+spring.datasource.employee.password = password
+
+other is postgresql used for dept
+spring.datasource.dept.driver-class-name = postgresql  // this is dummy name add correct
+spring.datasource.dept.url =
+spring.datasource.dept.username = root
+spring.datasource.dept.password = password
+
+then need to pass this datasource properties to entity manager 
+Create DataSource Config for employee (Primary)
+@Configuration
+@EnableJpaRepositories(
+    basePackages = "com.example.employee.repo",
+    entityManagerFactoryRef = employeeEntityManagerFactory",
+    transactionManagerRef = "employeeTransactionManager"
+)
+public class EmployeeConfig {
+
+    @Primary               // this is only one entity here it is in employee so in dept it is not there   , this will be default datasource 
+    			 //When multiple beans of the same type exist, Spring needs ONE default choice.
+    @Bean
+    @ConfigurationProperties("spring.datasource.employee")
+    public DataSource employeeDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Primary
+    @Bean
+    public LocalContainerEntityManagerFactoryBean employeeEntityManagerFactory(
+            EntityManagerFactoryBuilder builder) {
+        return builder
+                .dataSource(employeeDataSource())
+                .packages("com.example.employee.entity")
+                .persistenceUnit("employee")
+                .build();
+    }
+
+    @Primary
+    @Bean
+    public PlatformTransactionManager employeeTransactionManager(
+            EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+}
+
+3️⃣ Create DataSource Config for dept
+@Configuration
+@EnableJpaRepositories(
+    basePackages = "com.example.dept.repo",
+    entityManagerFactoryRef = "deptEntityManagerFactory",
+    transactionManagerRef = "deptTransactionManager"
+)
+public class DeptConfig {
+
+    @Bean
+    @ConfigurationProperties("spring.datasource.dept")
+    public DataSource deptDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean deptEntityManagerFactory(
+            EntityManagerFactoryBuilder builder) {
+        return builder
+                .dataSource(deptDataSource())
+                .packages("com.example.dept.entity")
+                .persistenceUnit("dept")
+                .build();
+    }
+
+    @Bean
+    public PlatformTransactionManager deptTransactionManager(
+            EntityManagerFactory emf) {
+        return new JpaTransactionManager(emf);
+    }
+}
+
+4️⃣ Package Structure (Very Important)
+com.example.employee
+ ├── entity
+ ├── repo
+
+com.example.dept
+ ├── entity
+ ├── repo
+
+
+Using Repositories in Service
+@Service
+public class MyService {
+
+    private final Employeepository employeeRepo;
+    private final DeptRepository deptRepo;
+
+    public MyService(Employeepository employeeRepo, DeptRepository deptRepo) {
+        this.employeeRepo = employeeRepo;
+        this.deptRepo = deptRepo;
+    }
+}
+
+*
+diff ways to define custom queries in spring data jpa
+-->
+
+1.method syntax
+2.using JPQL
+3.USING SQL
+
+
+1.method syntax
+	Spring generates the query from the method name.
+EX.
+List<Employee> findByDeptName(String deptName);
+Employee findByEmailAndStatus(String email, String status);
+
+Supports
+And, Or
+Between, LessThan, GreaterThan
+Like, Containing
+OrderBy
+
+Pros
+✔ No SQL/JPA code
+✔ Fast to write
+
+Cons
+❌ Method names get long
+❌ Limited for complex queries
+
+2️⃣ @Query with JPQL
+Example
+@Query("SELECT e FROM Employee e WHERE e.deptName = :dept")
+List<Employee> findByDept(@Param("dept") String dept);
+
+Notes
+Uses entity names & fields
+DB independent
+
+Pros
+✔ More control
+✔ Cleaner than long method names
+
+Cons
+❌ Still limited for very complex queries
+
+3️⃣ @Query with Native SQL
+Example
+@Query(
+  value = "SELECT * FROM employee WHERE dept_name = :dept",
+  nativeQuery = true
+)
+List<Employee> findByDeptNative(@Param("dept") String dept);
+
+Pros
+✔ Full SQL power
+✔ Use DB-specific features
+
+Cons
+❌ DB dependent
+❌ Column names must match DB
+
+* 
+how will you implement pagination and sorting spring data jpa
+
+-->
+Using PagingAndSortingRepository or JpaRepository
+JpaRepository already extends PagingAndSortingRepository, so you can use:
+
+Page<Employee> findAll(Pageable pageable);
+List<Employee> findAll(Sort sort);
+
+1.Pagination Example
+
+Service Layer
+
+@Service
+public class EmployeeService {
+
+    private final EmployeeRepository employeeRepo;
+
+    public EmployeeService(EmployeeRepository employeeRepo) {
+        this.employeeRepo = employeeRepo;
+    }
+
+    public Page<Employee> getEmployeesPaginated(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize); // pageNo starts from 0
+        return employeeRepo.findAll(pageable);
+    }
+}
+
+Controller Layer
+
+@RestController
+@RequestMapping("/employees")
+public class EmployeeController {
+
+    private final EmployeeService employeeService;
+
+    public EmployeeController(EmployeeService employeeService) {
+        this.employeeService = employeeService;
+    }
+
+    @GetMapping("/page")
+    public Page<Employee> getEmployees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return employeeService.getEmployeesPaginated(page, size);
+    }
+}
+
+
+✅ Notes:
+
+Page<Employee> contains:
+getContent() → list of employees
+getTotalPages(), getTotalElements()
+isFirst(), isLast()
+
+
+2.Sorting Example
+
+Service Layer
+public List<Employee> getEmployeesSorted(String field) {
+    return employeeRepo.findAll(Sort.by(Sort.Direction.ASC, field));
+}
+
+
+Controller Layer
+@GetMapping("/sort")
+public List<Employee> getSortedEmployees(@RequestParam(defaultValue = "name") String sortBy) {
+    return employeeService.getEmployeesSorted(sortBy);
+}
+
+
+✅ Notes:
+Sort can be ASC or DESC
+Multiple fields:
+Sort sort = Sort.by(Sort.Direction.DESC, "deptName")
+                .and(Sort.by(Sort.Direction.ASC, "name"));
+
+3. Pagination + Sorting Together
+Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("name").ascending());
+Page<Employee> page = employeeRepo.findAll(pageable);
+
+Controller Example:
+
+@GetMapping("/page-sort")
+public Page<Employee> getEmployeesPageSort(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "5") int size,
+        @RequestParam(defaultValue = "name") String sortBy) {
+    Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+    return employeeService.getEmployeesPaginated(pageable);
+}
+
+4. Derived Query + Pagination / Sorting
+
+You can also apply pagination on custom queries:
+Page<Employee> findByDeptName(String deptName, Pageable pageable);
+
+Usage:
+Pageable pageable = PageRequest.of(0, 5, Sort.by("name").descending());
+Page<Employee> employees = employeeRepo.findByDeptName("IT", pageable);
+
+✅ Summary
+Use Pageable for pagination
+Use Sort for sorting
+Use PageRequest.of(page, size, sort) to combine both
+Works with built-in findAll or derived queries
+
+

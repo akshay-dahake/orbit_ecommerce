@@ -1,0 +1,629 @@
+*
+Describe the flow of HTTPS requests through a Spring Boot application.
+-->
+1. Client initiates HTTPS request
+
+Browser / client sends an HTTPS request (TLS encrypted) to:
+https://api.example.com
+
+Request includes:
+URL
+Headers
+Encrypted payload
+
+2. TLS/SSL handshake (Transport layer)
+Happens before Spring Boot is involved
+Managed by:
+Embedded server (Tomcat / Jetty / Undertow)
+Or external load balancer / reverse proxy
+
+Steps:
+
+Server presents SSL certificate
+Client validates certificate
+Encryption keys are negotiated
+After handshake → secure TCP channel established
+
+✅ At this point, HTTP data is decrypted for the server
+
+3. Embedded Servlet container (Tomcat)
+
+Tomcat:
+Accepts decrypted HTTP request
+Converts it into HttpServletRequest
+Hands request to the Servlet filter chain
+
+4. Servlet Filters (including Spring Security)
+
+Filters execute before request reaches Spring MVC
+Common filters:
+SecurityFilterChain (authentication, authorization)
+CORS filter
+Logging / tracing filters
+Multipart filter (file uploads)
+Example:
+Client → Tomcat → Filters → DispatcherServlet
+
+5. DispatcherServlet (Front Controller)
+
+Central entry point for Spring MVC
+Responsibilities:
+Finds appropriate controller using HandlerMapping
+Delegates execution to handler (controller)
+
+6. Handler Interceptors (optional)
+
+Execute before and after controller
+Used for:
+Auditing
+Metrics
+Custom authorization logic
+
+7. Controller layer
+
+Request is mapped to:
+@GetMapping("/users/{id}")
+Spring:
+Binds path variables, request params, body
+Performs validation
+Converts JSON → Java objects
+
+8. Service layer
+
+Business logic execution
+Transaction management
+Calls repositories or external services
+
+9. Repository / Data access layer
+
+Interacts with database via:
+JPA / Hibernate
+JDBC
+Returns domain objects
+
+10. Response processing
+
+Controller returns:
+Object
+ResponseEntity
+Spring:
+Serializes object → JSON (Jackson)
+Sets HTTP status and headers
+
+11. Response filters & interceptors
+
+Post-processing logic:
+Security headers
+Logging
+Metrics
+
+12. Response sent back to client
+
+Tomcat:
+Encrypts HTTP response using TLS
+Client receives secure HTTPS response
+
+Key interview insights (experienced)
+
+TLS termination may happen:
+At Tomcat
+OR at Load Balancer (AWS ALB, Nginx)
+Spring Boot handles HTTP, not encryption directly
+DispatcherServlet is the heart of request routing
+Filters run before interceptors
+HTTPS adds transport-level security, not application logic
+
+One-line interview summary
+
+“An HTTPS request is decrypted by the server after TLS(Transport layer security) handshake, processed through servlet filters, routed by DispatcherServlet to controllers,
+ handled by business layers,then to repository layer then response processing happens and  then encrypted again and sent back to the client.”
+
+
+*
+
+How can you programmatically determine which profiles are currently active in a Spring Boot application?
+-->
+1.In Spring Boot, you can determine the active profiles programmatically using the Environment
+@Component
+public class ProfileChecker {
+
+    @Autowired
+    private Environment environment;
+
+    @PostConstruct
+    public void checkActiveProfiles() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        System.out.println("Active profiles: " + Arrays.toString(activeProfiles));
+    }
+}
+
+environment.getActiveProfiles() returns an array of currently active profiles.
+If no profile is explicitly set, Spring uses the default profile, accessible via environment.getDefaultProfiles().
+
+
+2.Using @Value annotation:
+
+@Value("${spring.profiles.active:default}")
+private String activeProfiles;
+
+3.
+Using ApplicationContext:
+
+@Autowired
+private ApplicationContext context;
+
+public void checkProfiles() {
+    String[] profiles = context.getEnvironment().getActiveProfiles();
+}
+
+
+*
+How to enable actuator in spring boot 
+
+Add spring-boot-starter-actuator dependency.
+Configure which endpoints to expose in application.properties or application.yml.
+Access endpoints via /actuator/*.
+
+Step 1: Add the dependency
+If you’re using Maven, add:
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+
+For Gradle:
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+
+Step 2: Enable endpoints in application.properties or application.yml
+By default, only a few endpoints like /health and /info are exposed. You can enable others:
+
+# Enable all actuator endpoints
+management.endpoints.web.exposure.include=*
+
+# Optional: set actuator port different from app
+# management.server.port=8081
+
+
+Or using YAML:
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # expose all endpoints
+
+
+Step 3: Access Actuator endpoints
+After starting the app, you can access endpoints like:
+http://localhost:8080/actuator/health → checks app health
+http://localhost:8080/actuator/metrics → metrics data
+http://localhost:8080/actuator/info → app info
+
+
+*
+How to test spring boot application
+-->
+1.Unit Testing
+
+Unit tests focus on testing individual components (like services or repositories) in isolation, often using mock objects.
+
+Tools:
+JUnit 5 (test framework)
+Mockito (mocking dependencies)
+AssertJ (fluent assertions)
+
+Example:
+@SpringBootTest
+class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private UserService userService;
+
+    @Test
+    void testFindUserById() {
+        User user = new User(1L, "Alice");
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        User result = userService.findUserById(1L);
+
+        Assertions.assertEquals("Alice", result.getName());
+    }
+}
+
+
+✅ Key points:
+
+Use @Mock to mock dependencies.
+Use @InjectMocks to inject mocks into the class under test.
+Keep tests small and fast.
+
+
+2. Integration Testing
+
+Integration tests check how multiple components work together, often loading the Spring context.
+
+Annotations:
+@SpringBootTest → loads the entire Spring context
+@AutoConfigureMockMvc → sets up MockMvc for testing controllers
+@DataJpaTest → tests repositories with an in-memory database (like H2)
+
+Example: Testing a REST Controller
+@SpringBootTest
+@AutoConfigureMockMvc
+class UserControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void testGetUser() throws Exception {
+        mockMvc.perform(get("/users/1"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.name").value("Alice"));
+    }
+}
+
+
+✅ Key points:
+Use MockMvc to simulate HTTP requests without starting a server.
+For database tests, H2 is commonly used to avoid touching production data.
+
+1. Unit Testing:
+For unit tests, I focus on testing individual components like services or utilities in isolation. 
+I use JUnit 5 for writing tests and Mockito to mock dependencies. This ensures that my business logic works correctly 
+without involving external dependencies. For example, I mock repositories while testing service classes.
+
+2. Integration Testing:
+Integration tests are crucial to verify that multiple components work together correctly. In Spring Boot,
+ I use @SpringBootTest to load the application context, @AutoConfigureMockMvc to test REST controllers, and 
+ @DataJpaTest for testing repository layers with an in-memory database like H2. I also ensure that database transactions are 
+ rolled back after each test to maintain test isolation.
+
+3. End-to-End Testing:
+For critical workflows, I write end-to-end tests using tools like RestAssured or Testcontainers to test the 
+application against real databases or external services. This helps catch integration issues that unit or integration tests might miss.
+
+
+
+*
+Explain Spring Boot's approach to handling asynchronous operations.
+-->
+1.Using @Async:
+Spring Boot provides simple async execution using the @Async annotation. When a method is annotated with @Async, 
+it runs in a separate thread managed by a Spring TaskExecutor, allowing the caller thread to continue without blocking.
+
+With @Async, methods can return both Future and CompletableFuture
+Future is a basic handle to an async result that often forces blocking, 
+whereas CompletableFuture provides a powerful, non-blocking, composable API for building complex asynchronous workflows.
+
+@Async
+public CompletableFuture<String> processAsync() {
+    return CompletableFuture.completedFuture("Done");
+}
+
+
+To enable this, we use:
+@EnableAsync
+We place @EnableAsync on a configuration or main application class so Spring can detect and execute
+
+
+
+*
+How would you implement efficient handling of large file uploads in a Spring Boot REST API while keeping the system responsive and scalable?
+-->
+“I handle large file uploads by streaming data instead of loading it into memory, storing files in external object storage, 
+offloading processing asynchronously, and keeping services stateless so the system remains responsive, scalable, and cloud-ready.”
+
+Do NOT use MultipartFile.getBytes() for large files
+✅ Stream directly to disk or object storage
+
+in application.properties
+spring.servlet.multipart.max-file-size=2048KB
+spring.servlet.multipart.max-request-size=2048KB
+
+This ensures:
+Files larger than the threshold are written to disk
+Heap memory stays safe
+
+
+Use Streaming APIs (Servlet / WebFlux)
+Option A: Spring MVC (Blocking, but Safe)
+@PostMapping("/upload")
+public ResponseEntity<?> upload(@RequestParam MultipartFile file) throws IOException {
+    try (InputStream in = file.getInputStream()) {     // by using inputStream
+        Files.copy(in, Paths.get("/uploads/" + file.getOriginalFilename()));
+    }
+    return ResponseEntity.ok("Uploaded");
+}
+
+✔ Uses streaming
+✔ Minimal memory footprint
+
+
+Offload Storage (Do Not Store on App Server)
+Production Strategy ->
+Store files in external storage:
+AWS S3 / GCP Storage / Azure Blob
+NAS / distributed file system
+
+Why?
+App instances are stateless
+Supports horizontal scaling
+No data loss on restart
+Example (Streaming to S3)
+
+
+
+also more ways like rate limiting , load balancer etc...
+spliting a large file into chunks
+
+
+
+*
+@Transactional internals
+
+lets say
+@Transactional
+public transfer
+
+it internally uses AOP
+uses aroundAdvice  means any pre processing logic before method execution and post processing logic after method execution
+
+before execution (method which is annoted) -> createor get the txn
+after method execution (method which is annoted)
+	if success -> commit  the txn
+	if falis -> rollback the txn
+	
+	
+	transactioninterceptor class gets control  this is the class who apply the aroundAdvice on method (transfer )
+	
+	
+*
+if interviewer asked how you do code review what should be there what should be need to check and all how to answer
+
+“When I do a code review, I focus on correctness, readability, maintainability, performance, and security — not just whether the code works.”
+
+1.Correctness & logic
+First priority: does it do what it’s supposed to do?
+I check:
+Business logic correctness
+Edge cases (nulls, empty lists, boundaries)
+Error handling
+Exception scenarios
+
+2.Readability & clarity
+Code is read more than written.
+I check:
+Clear naming (variables, methods, classes)
+Methods doing one thing
+Avoid unnecessary complexity
+Consistent formatting
+
+3.4️⃣ Performance & scalability
+I ask:
+Is this running inside a loop?
+DB calls optimized?
+N+1 queries?
+Correct data structures used?
+
+
+
+*
+What is the N+1 Query Problem? (simple definition)
+
+N+1 queries happen when your code executes 1 query to fetch a list, and then N additional queries — 
+one for each item in the list.
+
+N+1 queries occur when one query fetches a list and then N additional queries fetch related data for each item. 
+It causes performance issues and is common in ORM-based applications. It can be fixed using join fetches, batch fetching, or optimized queries.
+
+
+example
+Scenario
+You want all Orders and their Customers
+❌ Bad approach (N+1)
+List<Order> orders = orderRepo.findAll(); // 1 query
+
+for (Order order : orders) {
+    Customer c = customerRepo.findById(order.getCustomerId());
+}
+
+SQL executed
+1 query  → SELECT * FROM orders;
+N queries → SELECT * FROM customer WHERE id = ?;
+
+
+If:
+1,000 orders → 1,001 queries
+
+100,000 orders → 💥
+
+📉 Why this is bad
+
+Massive DB round-trips
+
+Slow response times
+
+High DB load
+
+Scales terribly
+
+Often works fine in local (small data)
+Breaks badly in production
+
+🧪 Real JPA / Hibernate Example
+List<Order> orders = orderRepo.findAll();
+
+for (Order order : orders) {
+    System.out.println(order.getCustomer().getName());
+}
+
+
+If customer is LAZY:
+
+1 query for orders
+
+1 query per order for customer
+
+👉 Classic N+1.
+
+✅ How to detect N+1
+
+Enable SQL logs
+
+Look for repeated similar queries
+
+Use tools:
+
+Hibernate statistics
+
+APM (New Relic, Datadog)
+
+DB slow query logs
+
+🛠️ How to fix N+1 (MOST IMPORTANT)
+1️⃣ Join fetch (JPA / Hibernate)
+@Query("SELECT o FROM Order o JOIN FETCH o.customer")
+List<Order> findAllWithCustomer();
+
+
+One query. Done.
+
+
+*
+we can not store  db password , secret key in properties file or we cannot commit  it to git then what to do
+
+for local use environment variables  , create that and used in properties file like 
+
+db.password = ${db_password}; like this use it in configuration class  
+
+
+for prod we can use aws secret for this we need to add the dependency
+
+<dependency>
+    <groupId>io.awspring.cloud</groupId>
+    <artifactId>spring-cloud-aws-starter-secrets-manager</artifactId>
+    <version>3.0.0</version>
+</dependency>
+
+
+and in properties file 
+spring:
+  cloud:
+    aws:
+      secrets-manager:
+        activated: true
+        name: my-app-secrets #      // this is key against which password is stored
+        
+        
+        
+ then 
+ @Configuration
+@ConfigurationProperties(prefix = "db") // If your secret JSON is {"password": "..."}
+public class DatabaseSettings {
+    private String password;
+    private String username;
+
+    // Standard Getters and Setters
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+}
+Using it in a Service or Controller: Now, you just "Autowire" that settings object.
+
+Java
+@Service
+public class MyDatabaseService {
+
+    private final DatabaseSettings dbSettings;
+
+    public MyDatabaseService(DatabaseSettings dbSettings) {
+        this.dbSettings = dbSettings;
+    }
+
+    public void connect() {
+        String pass = dbSettings.getPassword(); // Clean and centralized!
+    }
+}
+
+
+this is how we can create secrete 
+aws secretsmanager create-secret --name MyProdDatabase \
+  --secret-string '{"username":"admin","password":"my-super-secret-password"}'
+  
+  
+  
+ 2. Grant Access (The Guard)
+Your application (running on EC2, Lambda, or ECS) needs permission to "open the vault." You do this by attaching an IAM Policy to the execution role of your service.
+
+
+
+*
+
+how you can validate the any request before reaching the controller 
+
+we can use interceptor  
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+@Component
+public class HeaderValidationInterceptor implements HandlerInterceptor {
+
+    private static final String REQUIRED_HEADER = "X-Api-Key";
+    private static final String VALID_KEY = "MySecretKey123";
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // 1. Extract the header
+        String apiKey = request.getHeader(REQUIRED_HEADER);
+
+        // 2. Validate existence and value
+        if (apiKey == null || !apiKey.equals(VALID_KEY)) {
+            // Log the failure if needed
+            System.out.println("Invalid or missing Header: " + REQUIRED_HEADER);
+            
+            // 3. Reject the request
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST); // 400 Bad Request
+            response.getWriter().write("Error: Required header " + REQUIRED_HEADER + " is missing or invalid.");
+            return false; // Terminates the request flow
+        }
+
+        // 4. Validation successful
+        return true; 
+    }
+}
+
+
+
+2. Registering the Interceptor - The interceptor won't run unless you register it 
+with the InterceptorRegistry.Java import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class AppConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private HeaderValidationInterceptor headerValidationInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(headerValidationInterceptor)
+                .addPathPatterns("/api/v1/internal/**") // Only protect specific routes
+                .excludePathPatterns("/api/v1/public/**"); // Skip for public routes
+    }
+}
+
+3. The Flow Visualization -> The interceptor is part of the Spring WebApplicationContext, which gives it a significant advantage over a Servlet Filter: it knows which method in your Controller is about to be called.
+
+Why use an Interceptor for this instead of a Filter?
+Access to the 'Handler': The Object handler parameter tells you exactly which Controller method is being called. You could, for instance, check if that method has a specific Custom Annotation and only validate headers for those methods.Spring Context Access: Interceptors are full Spring beans. You can easily @Autowire your Database or Environment settings to check the header value against a dynamic configuration.Path Matching: Interceptors offer very easy path-pattern matching (like addPathPatterns) compared to the more manual URL matching often required in standard Servlet Filters.Summary of the Check LogicScenariopreHandle Action

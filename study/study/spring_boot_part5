@@ -1,0 +1,222 @@
+*
+how will you handle exceptions in your project
+-->
+Use @ControllerAdvice + @ExceptionHandler (Global Exception Handling)
+This is the recommended approach for REST APIs.
+
+1.Create a Global Exception Handler
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // Handle custom exceptions
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.NOT_FOUND.value(),
+            ex.getMessage(),
+            System.currentTimeMillis()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    // Handle validation errors
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+        String errors = ex.getBindingResult().getFieldErrors().stream()
+                          .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                          .collect(Collectors.joining(", "));
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            errors,
+            System.currentTimeMillis()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    // Handle generic exceptions
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Internal Server Error",
+            System.currentTimeMillis()
+        );
+        ex.printStackTrace(); // optional: log the exception
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+}
+
+Error Response DTO
+public class ErrorResponse {
+    private int status;
+    private String message;
+    private long timestamp;
+
+    public ErrorResponse(int status, String message, long timestamp) {
+        this.status = status;
+        this.message = message;
+        this.timestamp = timestamp;
+    }
+
+    // getters & setters
+}
+
+2.Custom Exceptions
+
+Define domain-specific exceptions:
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+
+public class FileStorageException extends RuntimeException {
+    public FileStorageException(String message) {
+        super(message);
+    }
+}
+
+Makes it easy to map specific errors to proper HTTP status codes.
+
+3.Handle Validation Errors
+
+Use @Valid in controllers with DTOs:
+
+@PostMapping("/users")
+public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto user) {
+    UserDto saved = service.save(user);
+    return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+}
+
+Invalid fields trigger MethodArgumentNotValidException, which is caught in GlobalExceptionHandler.
+
+
+*
+how will you validate or sanitize your input payload
+
+-->
+“I validate input using Bean Validation annotations and custom validators.
+I sanitize strings to prevent XSS using trusted libraries, rely on ORM parameter binding to prevent SQL injection, 
+limit payload size, and handle validation errors globally with @ControllerAdvice.”
+
+
+| Layer             | Purpose          |
+| ----------------- | ---------------- |
+| DTO Validation    | Correctness      |
+| Custom Validators | Business rules   |
+| Sanitization      | Security         |
+| ORM binding       | SQL safety       |
+| Size limits       | Abuse protection |
+| Global handler    | Clean API errors |
+
+
+for ex->
+public class UserRequest {
+
+    @NotBlank(message = "Name is required")   // like this validate it  many more @NotNull, @NotEmpty,  @Email and so on .....
+    @Size(min = 2, max = 50)
+    private String name;
+
+    @Email(message = "Invalid email format")
+    @NotBlank
+    private String email;
+
+    @Min(18)
+    @Max(120)
+    private int age;
+
+    // getters & setters
+}
+ or make  separate validation as per requirement 
+ 
+Sanitization protects against XSS, SQL Injection, malformed input.
+like 
+->String Trimming & Normalization
+request.setName(request.getName().trim());
+request.setEmail(request.getEmail().toLowerCase());
+
+✔ Removes extra spaces
+✔ Converts empty strings to null
+
+✔ Parameter binding is safe
+❌ Avoid string concatenation
+
+Request Size & Payload Protection
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=10MB
+ // bu giving the size and all
+✔ Prevents payload abuse
+✔ Protects memory
+
+
+add dependency 
+spring-boot-starter-validation
+
+
+
+*
+how can you define custom bean validation
+
+
+
+*
+let say you find the bug in prod now you want to debug the scenario how you do it from local
+-->
+When I find a prod bug, I first collect logs, request details, and environment info. I reproduce the same configuration locally,
+replay the exact request, enable debug logs, and attach a debugger. I write a failing test to reproduce the issue, fix it, and verify before deploying.”
+
+by using @Profile and in application.properties enabling the specific profile
+spring.profile.active = local or prod  // that you want
+
+
+*
+how can enable specific environment without using profile or what is the alternative to profile to achieve same use case
+
+-->
+Property-Based Conditional Configuration (Most Common Alternative)
+
+Instead of profiles, use properties as feature/environment switches.
+
+Example: application.yml
+app.env: prod
+feature.newFlow.enabled: true
+
+Example: application.properties
+app.active.env =  prod
+
+
+Conditional Bean Using @ConditionalOnProperty
+@Configuration
+public class FeatureConfig {
+
+    @Bean
+   @ConditionalOnProperty(     //using this type of annotation
+    prefix = "app.active"
+    name = "env",
+    havingValue = "prod"
+)
+    public PaymentService newPaymentService() {
+        return new NewPaymentService();
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+        name = "feature.newFlow.enabled",
+        havingValue = "false",
+        matchIfMissing = true
+    )
+    public PaymentService oldPaymentService() {
+        return new OldPaymentService();
+    }
+}
+✔ No profiles
+✔ Environment controlled via config
+✔ Used heavily in production systems
+
+
+*
+diff between @profile and @conditional
+-->
+“@Profile activates beans based on active environment profiles, while @Conditional allows bean creation based on any condition.
+ @Profile is a specialized form of @Conditional, but @Conditional is more flexible and is heavily used in Spring Boot auto-configuration.”

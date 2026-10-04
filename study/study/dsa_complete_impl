@@ -1,0 +1,468 @@
+1. single linked list
+
+class LinkedListDSA {
+
+    // Node structure
+    class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+            this.next = null;
+        }
+    }
+
+    Node head; // head of the list
+
+    // 1️⃣ Add at the beginning
+    public void addFirst(int data) {
+        Node newNode = new Node(data);
+        newNode.next = head;
+        head = newNode;
+    }
+
+    // 2️⃣ Add at the end
+    public void addLast(int data) {
+        Node newNode = new Node(data);
+
+        if (head == null) {
+            head = newNode;
+            return;
+        }
+
+        Node temp = head;
+        while (temp.next != null) {
+            temp = temp.next;
+        }
+        temp.next = newNode;
+    }
+
+    // 3️⃣ Delete a node by value
+    public void delete(int key) {
+
+        // If list is empty
+        if (head == null) {
+            System.out.println("List is empty");
+            return;
+        }
+
+        // If head needs to be deleted
+        if (head.data == key) {
+            head = head.next;
+            return;
+        }
+
+        Node curr = head;
+        Node prev = null;
+
+        while (curr != null && curr.data != key) {
+            prev = curr;
+            curr = curr.next;
+        }
+
+        // If key not found
+        if (curr == null) {
+            System.out.println("Element not found");
+            return;
+        }
+
+        // Remove node
+        prev.next = curr.next;
+    }
+
+    // 4️⃣ Print the linked list
+    public void printList() {
+        if (head == null) {
+            System.out.println("List is empty");
+            return;
+        }
+
+        Node temp = head;
+        while (temp != null) {
+            System.out.print(temp.data + " -> ");
+            temp = temp.next;
+        }
+        System.out.println("null");
+    }
+
+    // 5️⃣ Main method (Testing)
+    public static void main(String[] args) {
+        LinkedListDSA list = new LinkedListDSA();
+
+        list.addFirst(10);
+        list.addFirst(20);
+        list.addLast(30);
+        list.addLast(40);
+
+        System.out.print("Linked List: ");
+        list.printList();
+
+        list.delete(20);
+        System.out.print("After deleting 20: ");
+        list.printList();
+
+        list.delete(100); // not present
+    }
+}
+
+
+
+
+
+
+2.
+class DoublyLinkedList {
+
+    class Node {
+        int data;
+        Node prev, next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    Node head;
+
+    // Add at end
+    public void add(int data) {
+        Node newNode = new Node(data);
+
+        if (head == null) {
+            head = newNode;
+            return;
+        }
+
+        Node temp = head;
+        while (temp.next != null)
+            temp = temp.next;
+
+        temp.next = newNode;
+        newNode.prev = temp;
+    }
+
+    // Print forward
+    public void printForward() {
+        Node temp = head;
+        while (temp != null) {
+            System.out.print(temp.data + " <-> ");
+            temp = temp.next;
+        }
+        System.out.println("null");
+    }
+
+    public static void main(String[] args) {
+        DoublyLinkedList dll = new DoublyLinkedList();
+        dll.add(10);
+        dll.add(20);
+        dll.add(30);
+        dll.printForward();
+    }
+}
+
+
+
+3.
+
+class CircularLinkedList {
+
+    class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    Node head = null, tail = null;
+
+    // Add node
+    public void add(int data) {
+        Node newNode = new Node(data);
+
+        if (head == null) {
+            head = tail = newNode;
+            tail.next = head;
+        } else {
+            tail.next = newNode;
+            tail = newNode;
+            tail.next = head;
+        }
+    }
+
+    // Print list
+    public void print() {
+        if (head == null) return;
+
+        Node temp = head;
+        do {
+            System.out.print(temp.data + " -> ");
+            temp = temp.next;
+        } while (temp != head);
+        System.out.println("(back to head)");
+    }
+
+    public static void main(String[] args) {
+        CircularLinkedList cll = new CircularLinkedList();
+        cll.add(1);
+        cll.add(2);
+        cll.add(3);
+        cll.print();
+    }
+}
+
+
+
+4. reversed list singly
+class ReverseLinkedList {
+
+    class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    Node head;
+
+    // Add node
+    public void add(int data) {
+        Node newNode = new Node(data);
+        newNode.next = head;
+        head = newNode;
+    }
+
+    // Reverse list
+    public void reverse() {
+        Node prev = null;
+        Node curr = head;
+        Node next;
+
+        while (curr != null) {
+            next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        head = prev;
+    }
+
+    // Print
+    public void print() {
+        Node temp = head;
+        while (temp != null) {
+            System.out.print(temp.data + " -> ");
+            temp = temp.next;
+        }
+        System.out.println("null");
+    }
+
+    public static void main(String[] args) {
+        ReverseLinkedList list = new ReverseLinkedList();
+        list.add(10);
+        list.add(20);
+        list.add(30);
+
+        list.print();
+        list.reverse();
+        list.print();
+    }
+}
+
+
+
+
+
+5.
+class DetectLoop {
+
+    class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    Node head;
+
+    // Detect loop
+    public boolean detectLoop() {
+        Node slow = head;
+        Node fast = head;
+
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+
+            if (slow == fast)
+                return true;
+        }
+        return false;
+    }
+
+    public static void main(String[] args) {
+        DetectLoop list = new DetectLoop();
+
+        list.head = list.new Node(1);
+        list.head.next = list.new Node(2);
+        list.head.next.next = list.new Node(3);
+        list.head.next.next.next = list.head; // loop
+
+        System.out.println(list.detectLoop()); // true
+    }
+}
+
+
+
+
+5.
+
+class RemoveLoop {
+
+    class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    Node head;
+
+    // Remove loop if exists
+    public void removeLoop() {
+        Node slow = head, fast = head;
+        boolean loopExists = false;
+
+        // Detect loop
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+
+            if (slow == fast) {
+                loopExists = true;
+                break;
+            }
+        }
+
+        if (!loopExists) return;
+
+        // Find start of loop
+        slow = head;
+        while (slow != fast) {
+            slow = slow.next;
+            fast = fast.next;
+        }
+
+        // Remove loop
+        while (fast.next != slow) {
+            fast = fast.next;
+        }
+        fast.next = null;
+    }
+}
+
+
+
+6.
+
+
+class FindMiddle {
+
+    class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    Node head;
+
+    // Find middle element
+    public int findMiddle() {
+        if (head == null) return -1;
+
+        Node slow = head;
+        Node fast = head;
+
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return slow.data;
+    }
+}
+
+
+
+7.
+class MergeSortedLists {
+
+    static class Node {
+        int data;
+        Node next;
+
+        Node(int data) {
+            this.data = data;
+        }
+    }
+
+    // Merge two sorted lists
+    public static Node merge(Node l1, Node l2) {
+
+        if (l1 == null) return l2;
+        if (l2 == null) return l1;
+
+        Node dummy = new Node(-1);
+        Node tail = dummy;
+
+        while (l1 != null && l2 != null) {
+            if (l1.data <= l2.data) {
+                tail.next = l1;
+                l1 = l1.next;
+            } else {
+                tail.next = l2;
+                l2 = l2.next;
+            }
+            tail = tail.next;
+        }
+
+        tail.next = (l1 != null) ? l1 : l2;
+
+        return dummy.next;
+    }
+}
+
+
+
+Time & Space Complexity
+Problem		Time	Space
+Remove Loop	O(n)	O(1)
+Find Middle	O(n)	O(1)
+Merge Lists	O(n+m)	O(1)
+
+
+Time Complexity Summary
+Operation	Time
+DLL Insert	O(n)
+CLL Insert	O(1)
+Reverse LL	O(n)
+Detect Loop	O(n)
+
+
+Time Complexity
+Operation	Time
+Add First	O(1)
+Add Last	O(n)
+Delete		O(n)
+Print		O(n)
+

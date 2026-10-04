@@ -1,0 +1,523 @@
+* 
+functional interface - one abstract method and any no of default and static method
+ex - runnable, callable , comparator
+
+*
+predefined fucntional interfaces
+
+consumer - accepts single input returns no result
+supplier  - provides result without accepting input
+predicate - takes one argument and returns the boolean  , mainly for filter
+Function - take  one argument and returns result
+
+
+*
+Comparator has two methods, so how is it functional?
+-->
+Comparator is a functional interface because it has only ONE abstract method: compare().
+The equals() method in Comparator is NOT abstract — it comes from Object 
+
+Why equals() Is NOT Abstract Here
+Key Rule (Very Important)
+Methods inherited from java.lang.Object do NOT count as abstract methods in a functional interface.
+
+
+*
+can 1 functional interface extends other functional interface
+A functional interface can extend another functional interface as long as there is only one abstract method in the combined interface; 
+default and static methods don’t count.
+
+@FunctionalInterface
+interface A {
+    void m1();
+}
+
+@FunctionalInterface
+interface B extends A {
+    // No new abstract methods
+    // Still functional
+}
+
+✅ B is functional because it only has one abstract method: m1().
+
+but suppose there is abstract method m2() in B then we will get the error  because now there will be 2 abstract methods
+then if we want to use interface then remove the @FunctionalInterface then it will act as normal interface
+
+
+*
+predicate , Function ,consumer and supplier are 4 functional interfaces
+predicate ->   boolean test(T t);      	 // abstract method
+Function ->    R apply(T t);		 // abstract method
+consumer ->    void accept(T t);	 // abstract method
+supplier ->    T get();			 // abstract method
+
+
+* 
+stream API ->it is used to process collection of object
+
+stream is a sequence of object that supports various method that are pipelined to give desired op
+
+
+*
+whem to use map and flatmap
+
+map() — one-to-one transformation
+When to use it
+
+Use map when:
+Each input element is transformed into exactly one output element
+You are changing the type or value, but not the structure
+
+List<String> names = List.of("alice", "bob", "charlie");
+
+List<String> upper =
+    names.stream()
+         .map(String::toUpperCase)
+         .toList();
+Input → Output
+"alice"   → "ALICE"
+"bob"     → "BOB"
+
+
+flatMap() — one-to-many (or many-to-one) transformation
+When to use it
+
+Use flatMap when:
+Each input element can produce 0, 1, or many output elements
+You want to flatten nested structures
+You want to avoid Stream<Stream<T>>
+
+List<List<Integer>> lists = List.of(
+    List.of(1, 2),
+    List.of(3, 4),
+    List.of(5)
+);
+
+❌ Using map (wrong for flattening)
+Stream<Stream<Integer>> stream =
+    lists.stream()
+         .map(List::stream);
+
+Result type:
+Stream<Stream<Integer>>
+
+✅ Using flatMap
+List<Integer> flat =
+    lists.stream()
+         .flatMap(List::stream)
+         .toList();
+
+Result:
+[1, 2, 3, 4, 5]
+
+
+*
+how to decide thread pull size
+-->
+decide on based on 
+CPU intesive task
+IO intensive task
+
+CPU-bound tasks 🧠
+Examples
+Calculations
+Data processing
+Encryption
+Image processing
+In-memory operations
+
+Rule
+
+Thread pool size ≈ number of CPU cores
+
+how to check CPU cores->
+int cores = Runtime.getRuntime().availableProcessors();
+ExecutorService pool = Executors.newFixedThreadPool(cores);
+
+For CPU-bound tasks, thread pool size should be close to the number of available processors.”
+
+
+I/O-bound tasks 🌐
+Examples
+Database calls
+File read/write
+Network calls
+REST API calls
+Waiting on locks
+
+Rule
+Thread pool size > number of CPU cores
+Because:
+Threads spend time waiting
+While one waits, another can run
+
+Famous formula (INTERVIEW GOLD 🏆)
+
+From Java Concurrency in Practice:
+Threads = CPU cores × (1 + Wait time / Compute time)
+Example
+CPU cores = 8
+Task spends 80% waiting, 20% computing
+
+Threads = 8 × (1 + 80/20)
+        = 8 × (1 + 4)
+        = 40 threads
+
+
+*
+wap for even and odd no using two threads
+--->
+                
+public class EvenOddSingleClass {
+
+    private int number = 1;
+    private final int limit = 10;
+
+    public synchronized void printOdd() throws InterruptedException {
+        while (number <= limit) {
+            while (number % 2 == 0) {
+                wait();
+            }
+            if (number <= limit) {
+                System.out.println("Odd: " + number++);
+                notify();
+            }
+        }
+    }
+
+    public synchronized void printEven() throws InterruptedException {
+        while (number <= limit) {
+            while (number % 2 != 0) {
+                wait();
+            }
+            if (number <= limit) {
+                System.out.println("Even: " + number++);
+                notify();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+
+        EvenOddSingleClass printer = new EvenOddSingleClass();
+
+        Thread oddThread = new Thread(() -> {
+            try {
+                printer.printOdd();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        Thread evenThread = new Thread(() -> {
+            try {
+                printer.printEven();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        oddThread.start();
+        evenThread.start();
+    }
+}
+
+
+*
+What is the difference between Stream.iterate() and Stream.generate()?
+
+Stream.iterate() and Stream.generate() in Java 8 are both methods for creating infinite streams, but
+they do so in different ways. Stream.iterate() takes a seed (initial value) and a function, applying the
+function repeatedly to generate a sequence (e.g., creating a stream of powers of two).
+Stream.generate(), on the other hand, uses a supplier to provide new values, which doesn't depend
+on the previous element. This makes Stream.generate() suitable for generating streams where each
+element is independent of the others.
+
+
+static <T> Stream<T> iterate(T seed, UnaryOperator<T> f)
+
+How It Works
+    Starts with a seed value
+    Each next element is derived from the previous one
+    Stateful generation (depends on prior value)
+
+Example
+
+Stream.iterate(1, n -> n + 1)
+      .limit(5)
+      .forEach(System.out::println);
+
+Output:
+1 2 3 4 5
+
+Typical Use Cases
+    Sequences (numbers, dates)
+    Mathematical progressions
+    Pagination logic
+
+3. Stream.generate()
+Definition
+
+Stream.generate() produces elements using a Supplier, independent of previous elements.
+Method Signature
+
+static <T> Stream<T> generate(Supplier<T> s)
+
+How It Works
+    Calls the supplier each time a new element is needed
+    Stateless generation
+    Values can be random or constant
+
+Example
+
+Stream.generate(Math::random)
+      .limit(5)
+      .forEach(System.out::println);
+
+Typical Use Cases
+    Random values
+    UUID generation
+    Constant streams
+    Lazy object creation
+
+Stream.iterate() generates elements based on the previous value, making it ideal for sequences, 
+while Stream.generate() produces elements independently using a supplier, making it suitable for random or constant values.
+
+11. How to Answer in Interview (Tip)
+
+Start with:
+
+    “Both are used to create infinite streams.”
+
+End with:
+
+    “The key difference is stateful vs stateless generation.”
+
+
+*
+ How can you apply a custom comparator in a stream pipeline in Java 8?
+
+ 1: Simple Custom Comparator
+
+Suppose we have a List<String> and want to sort by string length:
+List<String> names = Arrays.asList("Ram", "Shyam", "Alex", "John");
+
+List<String> sorted = names.stream()
+                           .sorted((s1, s2) -> Integer.compare(s1.length(), s2.length()))
+                           .collect(Collectors.toList());
+
+System.out.println(sorted); //  [Ram, Alex, John, Shyam]
+
+
+2.Using Comparator.comparing()
+
+More readable and functional:
+List<String> sorted = names.stream()
+                           .sorted(Comparator.comparing(String::length))
+                           .collect(Collectors.toList());
+
+Comparator.comparing() is preferred in modern Java
+
+Can chain multiple sort conditions using .thenComparing()
+
+List<Employee> sortedEmps = employees.stream()
+    .sorted(Comparator.comparing(Employee::getDept)
+                      .thenComparing(Employee::getSalary))
+    .collect(Collectors.toList());
+
+
+
+*
+optional example 
+
+Basic Optional Example
+Optional<String> name = Optional.of("Java");
+
+name.ifPresent(System.out::println);  // Java
+
+
+✔ Value is present
+✔ Safe access without null check
+
+2. Handling Possible null Value
+String value = null;
+
+Optional<String> opt = Optional.ofNullable(value);
+
+System.out.println(opt.orElse("Default Value"));
+
+
+Output:
+
+Default Value
+
+3. Avoiding NullPointerException
+Without Optional ❌
+User user = service.getUser();
+System.out.println(user.getName()); // may throw NPE
+
+With Optional ✅
+Optional<User> user = service.getUser();
+
+user.map(User::getName)
+    .ifPresent(System.out::println);
+
+
+*
+reduce()
+
+reduce() is a terminal operation that aggregates stream elements into a single result using an identity and accumulator function, 
+supporting both sequential and parallel execution.
+
+reduce(U identity, BiFunction<U, ? super T, U>, BinaryOperator<U>)
+
+(Used mainly in parallel streams)
+
+int sum =
+    list.stream().reduce(
+        0,
+        (partial, element) -> partial + element,
+        Integer::sum
+    );
+
+
+Identity → initial value
+Accumulator → combines element
+Combiner → merges partial results
+
+
+Real Examples
+Sum of Numbers
+int sum = list.stream().reduce(0, Integer::sum);
+
+Maximum Value
+int max = list.stream()
+              .reduce(Integer::max)
+              .orElse(0);
+
+String Concatenation
+String result =
+    list.stream().reduce("", String::concat);
+
+Product of Numbers
+int product =
+    list.stream().reduce(1, (a, b) -> a * b);
+    
+
+
+*
+Convert List of Strings to Map (String → Length)
+
+List<String> list = Arrays.asList("Java", "Spring", "API");
+
+Map<String, Integer> map =
+    list.stream()
+        .collect(Collectors.toMap(
+            s -> s,
+            s -> s.length()
+        ));
+
+
+Output:
+
+{Java=4, Spring=6, API=3}    
+    
+*
+ Is it possible to use this and super in a Lambda expression? Explain why or why not.
+
+in a lambda expression, this and super refer to the enclosing class and its superclass respectively,
+ because lambdas do not introduce a new scope like anonymous inner classes.
+ 
+Using this in a Lambda Expression
+Example
+interface Printer {
+    void print();
+}
+
+class Test {
+    String name = "Outer Class";
+
+    void show() {
+        Printer p = () -> {
+            System.out.println(this.name);
+        };
+        p.print();
+    }
+
+    public static void main(String[] args) {
+        new Test().show();
+    }
+}
+
+Output
+Outer Class
+
+
+
+Using super in a Lambda Expression
+Example
+class Parent {
+    String msg = "Parent";
+}
+
+class Child extends Parent {
+
+    void show() {
+        Runnable r = () -> {
+            System.out.println(super.msg);
+        };
+        r.run();
+    }
+
+    public static void main(String[] args) {
+        new Child().show();
+    }
+}
+
+Output
+Parent
+
+
+*
+ Can a Lambda expression throw an exception? How can you handle exceptions in a Lambda?
+ 
+ yes
+ 
+Unchecked Exceptions (Allowed)
+
+Unchecked exceptions (RuntimeException) can be thrown without restriction.
+
+Runnable r = () -> {
+    throw new RuntimeException("Error");
+};
+
+
+✔ Compiles
+✔ No throws needed
+
+Checked Exceptions (Compile-Time Restriction)
+❌ This will NOT compile
+Runnable r = () -> {
+    throw new IOException("IO Error");
+};
+
+
+Reason:
+
+Runnable.run() does not declare throws IOException
+
+4. How to Handle Checked Exceptions in Lambda
+4.1 Handle Inside Lambda (Most Common)
+Runnable r = () -> {
+    try {
+        throw new IOException("IO Error");
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+};
+
+
+✔ Works
+✔ Clean for small logic
+
+

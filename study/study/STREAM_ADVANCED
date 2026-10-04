@@ -1,0 +1,252 @@
+1.suppose there is class employeee that has fields like id, name, dept and salary now we have to find the for each dept the top two salry how to do that using java stream
+
+-->
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Employee {
+    int id;
+    String name;
+    String dept;
+    double salary;
+
+    public Employee(int id, String name, String dept, double salary) {
+        this.id = id;
+        this.name = name;
+        this.dept = dept;
+        this.salary = salary;
+    }
+
+    @Override
+    public String toString() {
+        return name + " (" + salary + ")";
+    }
+}
+
+public class TopTwoSalaries {
+
+    public static void main(String[] args) {
+
+        List<Employee> employees = Arrays.asList(
+                new Employee(1, "Alice", "IT", 9000),
+                new Employee(2, "Bob", "HR", 8000),
+                new Employee(3, "Charlie", "IT", 12000),
+                new Employee(4, "David", "HR", 9500),
+                new Employee(5, "Eve", "Finance", 11000),
+                new Employee(6, "Frank", "IT", 10000),
+                new Employee(7, "Grace", "HR", 7000)
+        );
+----------------------main code logic ---------------------------
+        // Group by department, sort by salary descending, take top 2
+        Map<String, List<Employee>> topTwoByDept = employees.stream()
+                .collect(Collectors.groupingBy(
+                        emp -> emp.dept,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                list -> list.stream()
+                                        .sorted(Comparator.comparingDouble(Employee::getSalary).reversed())
+                                        .limit(2)
+                                        .collect(Collectors.toList())
+                        )
+                ));
+
+        // Print results
+        topTwoByDept.forEach((dept, list) -> 
+                System.out.println(dept + " -> " + list)
+        );
+    }
+}
+
+// Add getter for salary
+class Employee {
+    int id;
+    String name;
+    String dept;
+    double salary;
+
+    // constructor and toString as above
+
+    public double getSalary() {
+        return salary;
+    }
+}
+
+
+output --->
+IT -> [Charlie (12000.0), Frank (10000.0)]
+HR -> [David (9500.0), Bob (8000.0)]
+Finance -> [Eve (11000.0)]
+
+=================================================================================================================================================
+2.you are given a list of employees each employee has a list of skills give a unique sorted list of all skills accross all employess in java stream
+
+
+import java.util.List;
+
+class Employee {
+    String name;
+    List<String> skills;
+
+    public Employee(String name, List<String> skills) {
+        this.name = name;
+        this.skills = skills;
+    }
+}
+
+
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class UniqueSortedSkills {
+
+    public static void main(String[] args) {
+
+        List<Employee> employees = Arrays.asList(
+                new Employee("Alice", Arrays.asList("Java", "Python", "SQL")),
+                new Employee("Bob", Arrays.asList("Python", "JavaScript")),
+                new Employee("Charlie", Arrays.asList("SQL", "C++", "Java"))
+        );
+
+        // Get unique sorted list of skills
+        List<String> uniqueSkills = employees.stream()
+                .flatMap(emp -> emp.getSkills.stream())   // flatten all skills into a single stream
+                .distinct()                            // keep only unique skills
+                .sorted()                              // sort alphabetically
+                .collect(Collectors.toList());         // collect as list
+
+        System.out.println(uniqueSkills);
+    }
+}
+
+====================================================================================================================================================================
+3.given a list of employees , employee has name and salary  sort employee based on following sort by salary in descending order and if salary is
+ same then sort by name in ascending order and return a sorted list 
+ 
+ class Employee {
+    private String name;
+    private double salary;
+
+    public Employee(String name, double salary) {
+        this.name = name;
+        this.salary = salary;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    @Override
+    public String toString() {
+        return name + " : " + salary;
+    }
+}
+
+
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class EmployeeSort {
+
+    public static void main(String[] args) {
+
+        List<Employee> employees = Arrays.asList(
+                new Employee("Alice", 5000),
+                new Employee("Bob", 7000),
+                new Employee("Charlie", 7000),
+                new Employee("David", 6000)
+        );
+-----main logic ------
+        List<Employee> sortedEmployees = employees.stream()
+                .sorted(
+                        Comparator.comparing(Employee::getSalary).reversed()
+                                  .thenComparing(Employee::getName)
+                )
+                .collect(Collectors.toList());
+
+        System.out.println(sortedEmployees);
+    }
+}
+
+output = [Bob : 7000, Charlie : 7000, David : 6000, Alice : 5000]
+
+============================================================================================================================
+ 4. given a list of employee , it has id and salary  convert this list into Map<Integer,EMployee>
+ where id is key and if multiple emp has same id keep empolyee with higher salary in map
+ 
+ class Employee {
+    private int id;
+    private double salary;
+
+    public Employee(int id, double salary) {
+        this.id = id;
+        this.salary = salary;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    @Override
+    public String toString() {
+        return "Employee{id=" + id + ", salary=" + salary + "}";
+    }
+}
+
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class EmployeeToMap {
+
+    public static void main(String[] args) {
+
+        List<Employee> employees = List.of(
+                new Employee(1, 5000),
+                new Employee(2, 7000),
+                new Employee(1, 8000), // duplicate id
+                new Employee(3, 6000),
+                new Employee(2, 6500)  // duplicate id
+        );
+-----main logic------
+        Map<Integer, Employee> employeeMap = employees.stream()
+                .collect(Collectors.toMap(
+                        Employee::getId,            // key mapper
+                        emp -> emp,                  // value mapper
+                        (e1, e2) ->                 // merge function for duplicate keys
+                                e1.getSalary() >= e2.getSalary() ? e1 : e2
+                ));
+
+        employeeMap.forEach((id, emp) ->
+                System.out.println(id + " -> " + emp)
+        );
+    }
+}
+ output = 
+ 1 -> Employee{id=1, salary=8000.0}
+2 -> Employee{id=2, salary=7000.0}
+3 -> Employee{id=3, salary=6000.0}
+
+
+
+main logic can be like this also 
+Map<Integer, Employee> employeeMap = employees.stream()
+        .collect(Collectors.toMap(
+                Employee::getId,
+                emp -> emp,
+                BinaryOperator.maxBy(
+                        Comparator.comparingDouble(Employee::getSalary)
+                )
+               , LinkedHashMap::new   // add this line if insertion order need to be preserved
+        ));
+
+====================================================================================

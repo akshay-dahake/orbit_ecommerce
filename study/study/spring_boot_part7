@@ -1,0 +1,103 @@
+
+* 
+what is isolation and propogation 
+
+isolation-> if two thread accesing the method which is annoted with transaction how you want to reflect the transaction between this two thread can be achieve 
+with isolation
+
+5 type of isolation
+DEFAUL
+READ_UNCOMMITED
+READ_COMMITED
+REPETABLE_READ
+SERIALIZABLE
+
+
+propagation ->
+
+there is method m1 annotated with transaction and inside m1() there is m2()
+
+if m2() fail then you want to rollback or continue 
+or if m2() is successful but error in m1() then what rollback or continue
+this is achieved by propagation
+
+propagation types
+REQUIRED
+SUPPORTS
+MANDATORY
+REQUIRES_NEW
+NOT_SUPPORTED
+NEVER
+NESTED
+
+
+*
+can we use transaction in private method
+-> will not work on private method because transaction internally using AOP proxy to apply the transaction on target method
+if we define private that wont visible by proxy
+
+
+ex -> suppose the class is Account
+
+public class AccountService{
+
+
+@Transactional
+public transfer(){
+
+//some logic
+}
+
+
+
+@Transactional
+private doSomething(){
+ //some logic
+}
+
+}
+
+
+
+what this @Transactional do intenally it uses AOP proxy ,  it creates the proxy class that extend the target class in this case 
+target clas is AccountService a it as the method which is annoted with @Transactional 
+
+public class AccountServiceProxy extends AccountService{
+
+private AccountService target;
+ 
+ //constructor parametezied
+ 
+ // need to override the method 
+ @override
+ public void transfer(){
+ try{
+ 	//begin txn
+ 	target.transfer()
+ 
+ }catch(Exception e){
+ 
+ // rollback 
+ }
+ 
+ }
+  //if we define  method as private then it is not visible to private class we are not able to override it
+
+
+}
+
+*
+how will you handle txn in distributed microservices
+
+saga design pattern
+two phase commit
+outbox design pattern
+
+*
+can we use txn in multipe microservices why or why not 
+
+--> no 
+each microservice uses its own db
+
+
+

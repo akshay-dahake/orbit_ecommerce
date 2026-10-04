@@ -1,0 +1,625 @@
+core java
+
+*
+If parent class is throwing exception then it is not necessary for child to throw exception
+But if child class throws exception then it is necessary for parent class to throw exception but the child method cannot throw a 
+broader checked exception than the parent method.
+
+* 
+when child extend parent
+Parent parent = new child()  // here with ref of parent creating object of child
+parent.m1()
+then child class m1() is called
+and suppose  there is no m1 method in child then from parent m1() is called , there is no compliation error 
+
+* can we override static and private method ?
+no, compilation error
+
+* 
+in java 8 we can define default and static method also with abstract method in interface before that it is not possible only abstract method is there 
+by default all method in interface are abstract , if we dont write abstract keyword in front of method then it is fine 
+
+
+default -> usefull
+if we implement the interface then the method need to override compulsory  in class  
+but for default method it is no need to override it compulsory
+
+static 
+if any method  or logic is common for all implementing class then keep that as static
+
+
+*
+final - keyword
+finally - block for clean up action, to close the connection , if we write system.exit(0) then finally block will not get execute
+finalize - method, used for clean up the unused object or null , when we call system.gc this method is called automaticaly
+	.this method is there in object class , data type is protected 
+	
+	
+*
+Hashcode - used to generate unique reference no for object through which can easily identify uniqueness of an object
+equals  - used to compare  the object based on its content 
+
+if hashcode of two object is same then there is no gaurantee the content of that objects is same 
+
+
+* 
+why checked exception is called as compile time exception ? is it occurs at compile time ?
+ no 
+ ex->
+ if try to read file and it is surrounded by try catch , and suppose the path of file is wrong then we will not get the error at compile time 
+ we get it after running the programm i.e filenotfound exception which is checked exception 
+ 
+ * 
+ custom exception 
+ 
+ create a class 
+ extend a class from RuntimeException or Exception 
+ create a constructor 
+ call super()
+ 
+ ex -> 
+ public class MyException extends \Exception {
+ 
+ 	public MyException (String message){
+ 		super(message);
+ 	}
+ }
+ 
+ 
+ *
+ two ways to create string object using new keyword and literals 
+ 
+ 
+ String s1 = new String ("akshay");
+ for this 2 object is created 1 in heap area and other in scp
+ 
+ String s2 = "akshay";   // for this also 1 object is created 
+ but in this case here no object is created as akshay is already present in scp so it will point to that only 
+ 
+ How to prove this 
+ 
+ System.out.print(s1.intern()); // this will print akshay   // intern method used to get reference from scp 
+ System.out.println(s1.intern().hashcode() == s2.hashcode());  // give true  
+  means it is pointing to refernce in scp as it is already present , hashcode is same , hence no new object is created for s2.
+  
+* 
+string is immutable 
+ why 
+ 
+ lets say there is String password = "abc"
+ 	password.concat("def") ;
+ suppose 5 references using this password and someone try to concat or changed it  now if get changed then it will affect all 5 references this is not good 
+ to avoid this string is immutable 
+ 
+ 
+* 
+mostly string builder used in creating dynamic query in dao layer by appending the query
+
+* 
+custom immutable class ->
+
+make class final
+make instance variable private and final
+only provide getter method dont provide setter method 
+initialize all variables in constructor
+perform cloning of mutable object while returning for getter method
+also we can do deep cloning in constructor it self for mutable object
+
+ex ->
+
+public final class Employee{
+
+private final String name;
+private final Date dob;  // it is object it is mutable 
+private final List<String> mob ; 
+other fields.....
+
+//parameterized constructor 
+public Employee(name,dob,mob, ....){
+	this.name = name ;
+	.
+	.this.mob = new ArrayList<String> (mob);  // like this deep cloning
+	
+	this.mob = List.copyOf(mob); // also we can do like this if do like this then in getter we do not need to change anything use any one of this 2  above java 9
+	. so on
+    }
+	
+//provide getters method only
+.......
+public Date getDob {
+	return dob
+}  and so on.....
+
+public static void main(String[] args){
+ Employee emp = new Employee("akshay", new Date(), "9090101", ......);
+ 
+ //here if try to modify the name we will get compile time error 
+ emp.name = "abc"  // we will get error 
+ sop(emp);
+
+// but with date 
+emp.getDob().setDate(13);
+sop(emp)   here date is changed to 13 that should not happen
+
+// so for this as date is object in getter instead of directly passing it pass the clone like this 
+
+public Date getDob {
+	return dob
+}
+//instead of above pass below then it is not able to modify the date 
+
+public Date getDob {
+	return (Date) dob.clone();   // perform cloning of mutable object while returning for getter method this point is proved here
+}
+
+
+// FOR any collection currently for list 
+emp.getMob().add("1234");
+sop(emp);  // it will get added in the list it should not 
+
+
+// so for this in getter 
+public List<String> getMob(){
+	return mob; // instead of this do like below
+	return Collections.unmodifiableList(mob); // this make the list unmodifiable
+	}
+}
+
+}
+
+
+*
+which is good to store  password in string or char[] ?
+--->
+In Java, it is better to store passwords in char[] rather than String.
+Why char[] is preferred 🔐
+1.Immutability of String
+
+String objects are immutable.
+
+Once created, the password cannot be changed or cleared.
+
+It stays in memory until garbage-collected, and you cannot control when that happens.
+
+This increases the risk of the password being exposed via:
+Memory dumps
+Heap inspection
+Debuggers
+
+String password = "secret123"; // stays in memory
+
+2. char[] can be wiped explicitly
+A char[] is mutable, so you can overwrite it once you’re done.
+This reduces the time the password exists in memory.
+char[] password = {'s','e','c','r','e','t'};
+Arrays.fill(password, '\0'); // clear after use
+
+
+*
+marker interface who does not have any method body , it is also called as tagging interface
+used for metadata
+ 
+custom marker interface
+ 
+public interface Auditable {
+}
+
+class Order implements Auditable {
+}
+
+class A {
+
+public void delete (Object obj){
+
+	if (obj instanceof Auditable) {  // here it will check where the obj is instance of that class(Order) which implements marker interface(Auditable)
+					// THEN only further code will execute else we can throw the exception
+    		audit(obj);
+}
+}
+}
+ 
+ 
+* 
+list creation 
+ArrayList arrList = new ArrayList<String>();  // tightly couple 
+List<String> list = new ArrayList<>(); // losse coupled in future if we want to use LinkedList it is easy here to change from arrayList to linkedList 
+ here we create object of child with ref of parent which is runtime polymorphism
+ 
+ what if declared a list as final
+ final List<String> list = new ArrayList<>();
+ list.add("a");
+ list.add("b");
+ 
+ sop(list);    // output is [a,b] -> elements will get added in list even the  list is final
+ 
+ list = new ArrayList<>()  // reassign of the list is not possible when  the list is final
+ 
+ 
+ when you want list unmodifiable then use collections.unmodifiableList();
+ 
+ 
+*
+how to write custom arraylist where duplicate is not allowed
+
+--->
+public class CustomArrayList extend ArrayList{
+
+@override    //add method of array list
+public boolean add(Object o){
+	if(this.contains(o)){            //contains(o) checks whether the element already exists in the list.If it exists:The method returns true But does NOT add the element 
+		return true;     
+	}else{
+		return super.add(o);   //calls the original add() method of ArrayList
+	}
+
+}
+	
+public static void main(String[] args){
+	CustomArrayList c = new CustomArrayList();
+	c.add(1);
+	c.add(1);
+	c.add(2);
+	c.add(2);
+	
+	sop(c)  -> output = [1,2]   // no duplicate will get add
+}
+
+}
+ 
+ 
+*
+why duplicate not allowed in set
+
+Set<String> s = new HashSet<>();
+s.add("abc");
+
+
+implementation of add 
+internally use map 
+the object which is pass as add method of set will act a key of a map
+
+add method consider the value pass as a key so here abc is act as key and value is dummy object
+
+public boolean add(E,e){
+	return map.put(e, PRESENT) = null;  
+}
+
+*
+if we using the set with primitive then duplicates not allowed 
+but if we are using set with any object then it allowed duplicates to avoid this there must be equals and hashcode method  override in class
+Set<Person> s = new Set<>();  here for same id we can add two entry and it will get print also so to avoid this provide hashcode and euqals method in person class
+
+A Set does not allow duplicates, but it decides what a duplicate is using:
+👉 equals() and hashCode()
+If you don’t override these methods in your object, Java uses the default implementation from Object.
+
+-----Default behavior (why duplicates appear)
+
+By default:
+class Person {
+    String name;
+}
+
+Set<Person> set = new HashSet<>();
+
+set.add(new Person("Alice"));
+set.add(new Person("Alice"));
+
+System.out.println(set.size()); // 2 😮
+
+----Why?
+
+Each new Person() has a different memory address
+Default equals() → compares references (==)
+Default hashCode() → based on memory address
+Person@1a2b3c ≠ Person@4d5e6f
+
+
+----How Set really checks duplicates
+
+For HashSet:
+Compare hashCode()
+If same, compare equals()
+if (obj1.hashCode() == obj2.hashCode())
+    then obj1.equals(obj2)
+Only if equals() returns true → duplicate
+
+----Correct way: Override equals() and hashCode()
+class Person {
+    String name;
+
+    Person(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Person)) return false;
+        Person person = (Person) o;
+        return Objects.equals(name, person.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+}
+
+so in short --> 
+Set prevents duplicates based on equals() and hashCode().
+Without overriding them, each object is treated as unique.”
+
+
+*
+fail fast -> A fail-fast iterator immediately throws an exception if the collection is structurally modified during iteration 
+(except through the iterator’s own remove() method).
+	ex-> ArrayList , HashMap , vector
+
+Key points
+
+Detects concurrent modification
+Throws ConcurrentModificationException
+Does not guarantee safety in multi-threaded environments
+Works on the original collection
+
+ArrayList<Integer> list = new ArrayList<>();
+list.add(1);
+list.add(2);
+list.add(3);
+
+Iterator<Integer> it = list.iterator();
+while (it.hasNext()) {
+    Integer val = it.next();
+    list.add(4); // Structural modification
+}
+//it will throw exception
+
+fail safe -> A fail-safe iterator does not throw an exception if the collection is modified during iteration.
+  	ex->CopyOnWriteArrayList, CopyOnWriteArraySet, ConcurrentHashMap
+  	
+Key points
+Works on a copy (snapshot) of the collection
+Safe in concurrent environments
+Does not reflect modifications made after iteration starts
+Slightly more memory overhead
+
+CopyOnWriteArrayList<Integer> list = new CopyOnWriteArrayList<>();
+list.add(1);
+list.add(2);
+list.add(3);
+
+Iterator<Integer> it = list.iterator();
+while (it.hasNext()) {
+    Integer val = it.next();
+    list.add(4); // No exception
+}
+
+
+internal working --->
+Fail-fast iterators use modCount and throw an exception on concurrent structural modification, whereas fail-safe iterators 
+iterate over a snapshot or weakly consistent structure, allowing concurrent modification without failure.
+
+fail fast internal-->
+Most non-concurrent collections in java.util inherit from AbstractList, AbstractMap, or similar base classes.
+They contain an internal field ->
+protected transient int modCount = 0;
+
+What modCount tracks-->
+it tracks Structural modifications:
+add()
+remove()
+clear()
+put() (for maps)
+Every structural change increments modCount.
+
+When an iterator is created:
+Iterator<E> it = list.iterator();
+The iterator stores a snapshot of modCount: like below 
+int expectedModCount = modCount;
+This value is local to the iterator, not shared.
+
+Every call to:
+next()
+remove()
+hasNext() (sometimes indirectly)
+invokes:
+
+final void checkForComodification() {
+    if (modCount != expectedModCount)
+        throw new ConcurrentModificationException();
+}
+
+What this means
+If any other thread or same thread modifies the collection
+And it does NOT go through the iterator
+modCount changes → mismatch → fail immediately
+This is why it’s called fail-fast.
+
+Fail-Fast Is NOT Thread-Safe -> because modCount is not volatile
+
+
+Fail safe internals --->
+Fail-safe iterators are implemented in java.util.concurrent package.
+
+Key design principle:
+Iterate over immutable snapshot, modify original safely
+
+CopyOnWriteArrayList
+Internal structure:
+
+private transient volatile Object[] array;
+On write (add, remove)
+Acquire lock
+Copy the entire array
+Modify the new array
+Assign it back to array
+
+Object[] newArray = Arrays.copyOf(oldArray, oldArray.length + 1);
+newArray[last] = element;
+array = newArray;
+
+next() simply reads from snapshot
+No modCount, no checks, no exceptions.
+
+
+Iterator references old array
+Modifications create a new array
+Snapshot never changes
+
+Why Java Chose Fail-Fast by Default
+
+Performance (no copying)
+Memory efficiency
+Bug detection during development
+Most collections are single-thread optimized
+Fail-safe is reserved for high-concurrency use cases.
+
+
+
+*
+hashmap and concurrenthash map
+
+hashmap ->
+HashMap is a non-synchronized implementation of the Map interface.
+It stores data as key–value pairs and uses hashing to store and retrieve elements efficiently.
+not thread safe 
+allow one key null and multiple values can be null
+Faster in single-threaded environments
+Not safe when multiple threads access it at the same time
+Internally uses an array of buckets
+linkedlist till java 7
+Linked List → Red-Black Tree when many collisions occur (Java 8+)
+
+
+concurrentHashMap->
+ConcurrentHashMap is a thread-safe implementation of the Map interface
+ designed for high-performance concurrent access.
+ dont allow null keys or null values
+ Allows multiple threads to read and write simultaneously
+ 
+Java 7 (Segment-based locking)
+Map divided into segments
+Each segment had its own lock
+Multiple threads could access different segments at the same time
+
+Java 8+ (No segments)
+Uses:
+CAS (Compare-And-Swap)
+Fine-grained locking
+Locks only specific buckets, not the entire map
+Much better scalability
+
+
+| Feature         | HashMap              | ConcurrentHashMap     |
+| --------------- | -------------------- | --------------------- |
+| Thread-safe     | ❌ No                 | ✅ Yes                 |
+| Synchronization | None                 | Internal fine-grained |
+| Performance     | Fast (single thread) | Fast (multi-threaded) |
+| Null key        | ✅ One allowed        | ❌ Not allowed         |
+| Null values     | ✅ Allowed            | ❌ Not allowed         |
+| Iterators       | Fail-fast            | Fail-safe             |
+| Locking         | No locking           | Bucket-level locking  |
+| Use case        | Single-threaded apps | Multi-threaded apps   |
+
+
+
+*
+if hashtable which is already synchronized then why we need concurrenthashmap?
+
+-->
+coarse- grained locking -> Single lock for the entire map ,Only one thread can read/write at a time,High contention
+                           Poor scalability on multi-core CPUs
+
+fine-grained locking -> concurrency technique where locks are applied to small portions of the data instead of the whole map, 
+                        allowing multiple threads to operate simultaneously with minimal blocking.  Only one bucket is locked, not entire map
+
+Hashtable is synchronized at method level (coarse-grained locking), which makes it slow.
+ConcurrentHashMap uses fine-grained locking and non-blocking techniques, so it is much faster and scalable in multi-threaded environments.
+
+Although Hashtable is synchronized, it uses a single lock for the entire map, which severely limits concurrency. ConcurrentHashMap uses 
+fine-grained locking and non-blocking reads, allowing multiple threads to access and modify the map simultaneously with much better performance. 
+That’s why ConcurrentHashMap is preferred over Hashtable in modern multi-threaded applications.
+
+in hashtable there is method level locking 
+means every method is synchronized 
+Only ONE thread can access the map at a time
+Even read operations block each other
+Causes heavy contention when many threads are involved
+If 100 threads want to:
+90 → read
+10 → write
+👉 Still only one thread can execute any method at a time
+
+Hashtable
+Iterators are fail-fast
+Modifying while iterating → ConcurrentModificationException
+
+
+in concurrenthashMap
+Locks only a small portion of the map   means ->
+Imagine a map divided into sections (buckets / segments).
+Thread-1 updates section A
+Thread-2 updates section B
+
+Multiple threads can:
+Read simultaneously
+Write to different buckets simultaneously
+
+ConcurrentHashMap
+Iterators are fail-safe
+Allows concurrent modification
+No exception
+
+
+Comparison Table (Most Important)
+| Feature               | Hashtable         | SynchronizedMap   | ConcurrentHashMap  |
+| --------------------- | ----------------- | ----------------- | ------------------ |
+| Introduced in         | Java 1.0          | Java 1.2          | Java 1.5           |
+| Thread-safe           | ✅ Yes             | ✅ Yes             | ✅ Yes              |
+| Synchronization level | Method-level      | Method-level      | Fine-grained       |
+| Locking scope         | Entire map        | Entire map        | Bucket-level       |
+| Read concurrency      | ❌ One thread only | ❌ One thread only | ✅ Multiple threads |
+| Write concurrency     | ❌ One thread only | ❌ One thread only | ✅ Multiple threads |
+| Null key              | ❌ Not allowed     | ✅ Allowed         | ❌ Not allowed      |
+| Null values           | ❌ Not allowed     | ✅ Allowed         | ❌ Not allowed      |
+| Iterators             | Fail-fast         | Fail-fast         | Fail-safe          |
+| Performance           | ❌ Slow            | ❌ Slow            | ✅ Fast             |
+| Modern usage          | ❌ Legacy          | ⚠️ Limited        | ✅ Recommended      |
+
+
+
+
+
+
+
+
+
+
+
+
+
+Jd@G&g9H3qav
+
+
+
+
+
+
+
+
+
+
+
+
+
+Software Developer with 3+ years of experience in designing, developing, and maintaining scalable backend applications using Java and Spring Boot. Strong experience in building RESTful APIs, handling authentication (JWT, cookies), and working with relational databases (PostgreSQL/MySQL).
+
+Hands-on experience with microservices architecture, scheduled jobs, data synchronization, and performance-optimized SQL queries. Familiar with React.js for frontend integration and UI-level debugging.
+
+Proven ability to work in Agile environments, collaborate with cross-functional teams, and deliver high-quality, production-ready solutions. Actively preparing for technical interviews and open to challenging backend-focused roles.
+
+
+
+
+Backend Software Developer with 3+ Years Experience in Java, Spring Boot and React

@@ -1,0 +1,146 @@
+*
+1. AWS IAM
+
+IAM (identity & access management)
+it is service to securely control access to aws resources
+it allows to manage users , roles and permission to define who can access and what is AWS
+IAM is free service 
+it is a global service
+
+
+USER type like root - it has all access
+
+what we can do in IAM service 
+create users from root user
+assign permissions - assign a permissions to user or group
+create groups - can group multiple users together
+
+how to create users
+step 1 -IAM Dashboard -> access management -> click on users -> create user -> username -> custom password -> create
+
+step 2 - set permissions -> there is multiple options -> select one options from that (add user to grp , copy permission, attach policy directly) select mostly add user to grp ->
+before that create a group  for this click on create grp -> give grp name -> there are permissions listed select accordingly ->
+
+step 3 - review and create 
+
+step 4 - review password
+
+
+
+MFA(multifactor authentication)
+it is extra layer of security 
+need to provide code from phone using apps like google authenticator
+
+
+if we enable MFA then while logging we need to provide
+username + password + security code
+
+
+ways of accessing aws
+aws management console
+aws cli
+
+
+in cli 1st install the aws cli and configure it
+
+to configure 1st create access key for cli from IAM here we are generating for root user (can do for other users also)
+ then in cli aws configure -> access key id  -> secreat key  -> default region like ap-south-1 for mumbai ->so it is configured for that user 
+
+
+to see the user list 
+aws iam list-users   ----> command
+
+
+
+*
+AWS EC2
+Elastic cloud compute is cloud service which provides resizable virtual servers called instances to run the applications
+EC2 Service is region specific
+
+what we can Do here 
+select OS
+RAM
+CPU
+DISK SPACE
+
+terms in EC2
+
+instance type ->  hardware capacity and all(CPU,memory)
+ami(amazon machine image) -> choose OS 
+Storage -> configure type and size of storage (EBS Volume)
+key pair -> create or use existing key pair for ssh access
+security group -> set up firewall rules for inbound/outbound traffic
+and so on.....
+
+Creating EC2 instance
+
+go to ec2 dashboard -> launch instance -> name ->  AMI, select OS here, free tier -> inmstance type -> create key pair(.pem file generated) ->
+network setting
+
+
+
+*
+AWS EBS(elastic block store)
+
+it is cloud based storage service that provides durable , high performance block storage for ec2 instance
+its like virtual hard drive that allows you to store and access data even the ec2 instance is stopped or terminated
+
+it is region and avalability zone specific
+it can used for snapshot for backup 
+
+
+EBS snapshot
+if we want to copy our data to new az or new region
+
+copy ebs from one az to other
+
+click on created volume of ebs -> click on action -> click on create snapshot
+then click on snapshot from ebs -> click on action -> click on create volume from snapshot -> select az -> create volume
+
+then create new instance in the new az -> t oadd az go to networking and and in subnet select az -> go to volumes and attach volume of az 
+
+copy snapshot from one region to other 
+select volume -> click on action -> click on copy snapshot -> select region where want to copy
+
+
+amazon data life cycle manager provide simple and automated way to backup data store in EBS volume
+
+go to life cycle manager in volumes 
+here we can use default policy or custome policy 
+
+for custom policy
+1st add tag for the volume like key and value by clicking the volume and go to manage tag
+
+the got to custom policy of life cycle manager there add that key and value in target resource by selecting volume 
+give policy description as you want  then next 
+in schedule then select frequency as you want like daily 
+then in advanced setting enable what you want like cross region copy if you want
+
+
+
+*
+AWS AMI(amazon machine image)
+
+it is preconfigured template that provides necessary info to launch ec2 instance
+it includes OS like linux , windows
+application servers like nginx, apache
+pre installed softwares and configurations
+
+
+
+
+*
+ELB AND auto scaling group
+ create Load balancer from ec2 there will be load balancing at left hand side
+
+ASG -> it si service that automatically add or remove the ec2 instances based on demand
+
+it helps us to scale up when more capacity needed and scale down when usage is low to save cost
+
+ 
+
+
+
+
+
+
